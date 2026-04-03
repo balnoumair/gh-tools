@@ -22,7 +22,7 @@ export interface PullRequest {
   labels: Array<{ name: string; color: string }>;
   additions: number;
   deletions: number;
-  mentionType: 'review_requested' | 'mentioned' | 'assigned';
+  mentionType: 'review_requested' | 'mentioned' | 'assigned' | 'authored';
 }
 
 export interface AuthStatus {
