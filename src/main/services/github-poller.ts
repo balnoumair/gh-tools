@@ -101,6 +101,14 @@ async function fetchUserPRs(kit: Octokit): Promise<PullRequest[]> {
     per_page: 30,
   });
 
+  // Fetch PRs authored by the user
+  const authored = await kit.rest.search.issuesAndPullRequests({
+    q: 'is:open is:pr author:@me',
+    sort: 'updated',
+    order: 'desc',
+    per_page: 50,
+  });
+
   // Deduplicate and merge
   const prMap = new Map<number, PullRequest>();
 
@@ -144,6 +152,7 @@ async function fetchUserPRs(kit: Octokit): Promise<PullRequest[]> {
   mapItems(reviewRequested.data.items, 'review_requested');
   mapItems(mentioned.data.items, 'mentioned');
   mapItems(assigned.data.items, 'assigned');
+  mapItems(authored.data.items, 'authored');
 
   return Array.from(prMap.values()).sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
