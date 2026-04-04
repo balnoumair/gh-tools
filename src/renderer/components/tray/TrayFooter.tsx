@@ -10,13 +10,13 @@ export default function TrayFooter() {
   };
 
   return (
-    <div className="flex items-center justify-between px-3 py-2 border-t border-ghv-border bg-ghv-surface/30">
+    <div className="flex items-center justify-between px-4 py-2.5 border-t border-mac-separator">
       <div className="flex items-center gap-2">
-        <span className="text-2xs text-ghv-text-muted font-mono tabular-nums">
+        <span className="text-[11px] text-mac-label-tertiary tabular-nums">
           {prs.length} PR{prs.length !== 1 ? 's' : ''}
         </span>
-        <span className="text-2xs text-ghv-text-muted">·</span>
-        <span className="text-2xs text-ghv-text-muted font-mono tabular-nums">
+        <span className="text-[11px] text-mac-label-tertiary">&middot;</span>
+        <span className="text-[11px] text-mac-label-tertiary tabular-nums">
           {formatTime(lastRefreshed)}
         </span>
       </div>
@@ -24,13 +24,13 @@ export default function TrayFooter() {
       <button
         onClick={forceRefresh}
         disabled={isRefreshing}
-        className="text-2xs text-ghv-text-dim hover:text-ghv-accent transition-colors
-                   disabled:opacity-30 font-mono"
-        title="Force refresh"
+        className="text-mac-label-tertiary hover:text-mac-label-secondary transition-colors
+                   disabled:opacity-30"
+        title="Refresh"
       >
         <svg
-          width="14"
-          height="14"
+          width="12"
+          height="12"
           viewBox="0 0 24 24"
           fill="none"
           className={isRefreshing ? 'animate-spin' : ''}

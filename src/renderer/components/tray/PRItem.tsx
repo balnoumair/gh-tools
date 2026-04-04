@@ -20,7 +20,7 @@ interface PRItemProps {
   index: number;
 }
 
-export default function PRItem({ pr, index }: PRItemProps) {
+export default function PRItem({ pr }: PRItemProps) {
   const handleClick = () => {
     window.electronAPI.openExternal(pr.url);
   };
@@ -28,16 +28,15 @@ export default function PRItem({ pr, index }: PRItemProps) {
   return (
     <button
       onClick={handleClick}
-      className="w-full text-left px-3 py-2.5 hover:bg-ghv-surface-hover transition-colors
+      className="w-full text-left px-4 py-2.5 hover:bg-mac-fill/50 transition-colors
                  cursor-pointer group animate-fade-in"
-      style={{ animationDelay: `${index * 30}ms` }}
     >
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-3">
         {/* Author avatar */}
         <img
           src={pr.author.avatarUrl}
           alt={pr.author.login}
-          className="w-6 h-6 rounded-sm mt-0.5 opacity-80 group-hover:opacity-100 transition-opacity"
+          className="w-7 h-7 rounded-full mt-0.5 ring-1 ring-mac-separator"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
           }}
@@ -46,21 +45,21 @@ export default function PRItem({ pr, index }: PRItemProps) {
         <div className="flex-1 min-w-0 space-y-1">
           {/* Repo + PR number */}
           <div className="flex items-center gap-1.5">
-            <span className="text-2xs text-ghv-text-muted font-mono truncate">
+            <span className="text-[11px] text-mac-label-secondary truncate">
               {pr.repoFullName}
             </span>
-            <span className="text-2xs text-ghv-accent font-mono font-medium">
+            <span className="text-[11px] text-mac-primary font-medium">
               #{pr.number}
             </span>
           </div>
 
           {/* Title */}
-          <div className="text-xs text-ghv-text leading-snug line-clamp-2 group-hover:text-white transition-colors">
+          <div className="text-[13px] text-mac-label leading-snug line-clamp-2">
             {pr.title}
           </div>
 
           {/* Meta row */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <PRStatusBadge pr={pr} />
 
             {/* CI status dot */}
@@ -68,19 +67,19 @@ export default function PRItem({ pr, index }: PRItemProps) {
               <div
                 className={`w-1.5 h-1.5 rounded-full ${
                   pr.ciStatus === 'success'
-                    ? 'bg-ghv-success'
+                    ? 'bg-mac-success'
                     : pr.ciStatus === 'failure'
-                    ? 'bg-ghv-error'
+                    ? 'bg-mac-danger'
                     : pr.ciStatus === 'pending'
-                    ? 'bg-ghv-warning animate-pulse-dot'
-                    : 'bg-ghv-text-muted'
+                    ? 'bg-mac-warning animate-pulse-dot'
+                    : 'bg-mac-label-tertiary'
                 }`}
                 title={`CI: ${pr.ciStatus}`}
               />
             )}
 
             {/* Mention type */}
-            <span className="text-2xs text-ghv-text-muted font-mono">
+            <span className="text-[11px] text-mac-label-tertiary">
               {pr.mentionType === 'review_requested'
                 ? 'review'
                 : pr.mentionType === 'mentioned'
@@ -91,7 +90,7 @@ export default function PRItem({ pr, index }: PRItemProps) {
             </span>
 
             {/* Time */}
-            <span className="text-2xs text-ghv-text-muted ml-auto tabular-nums">
+            <span className="text-[11px] text-mac-label-tertiary ml-auto tabular-nums">
               {timeAgo(pr.updatedAt)}
             </span>
           </div>
@@ -102,11 +101,10 @@ export default function PRItem({ pr, index }: PRItemProps) {
               {pr.labels.slice(0, 3).map((label) => (
                 <span
                   key={label.name}
-                  className="text-2xs px-1 py-px font-mono border"
+                  className="text-[10px] font-medium px-2 py-0.5 rounded-full"
                   style={{
-                    borderColor: `#${label.color}40`,
                     color: `#${label.color}`,
-                    backgroundColor: `#${label.color}10`,
+                    backgroundColor: `#${label.color}15`,
                   }}
                 >
                   {label.name}
