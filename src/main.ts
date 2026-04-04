@@ -11,7 +11,9 @@ import {
   setOnPRsUpdated,
   setPollInterval,
 } from './main/services/github-poller';
+import * as gitService from './main/services/git-service';
 import { IPC } from '@shared/ipc-channels';
+import type { MergeOptions, PushOptions, UpdateOptions, StashCreateOptions, StashApplyOptions } from '@shared/types';
 
 if (started) {
   app.quit();
@@ -77,6 +79,56 @@ ipcMain.handle(IPC.APP_OPEN_FULL_WINDOW, async () => {
 
 ipcMain.handle(IPC.APP_OPEN_EXTERNAL, async (_event, url: string) => {
   shell.openExternal(url);
+});
+
+// --- Git IPC Handlers ---
+
+ipcMain.handle(IPC.GIT_SELECT_REPO, async () => {
+  return gitService.selectRepo();
+});
+
+ipcMain.handle(IPC.GIT_GET_REPO_STATUS, async (_e, repoPath: string) => {
+  return gitService.getRepoStatus(repoPath);
+});
+
+ipcMain.handle(IPC.GIT_CHECKOUT_BRANCH, async (_e, repoPath: string, branch: string) => {
+  return gitService.checkoutBranch(repoPath, branch);
+});
+
+ipcMain.handle(IPC.GIT_CREATE_BRANCH, async (_e, repoPath: string, name: string, startPoint?: string) => {
+  return gitService.createBranch(repoPath, name, startPoint);
+});
+
+ipcMain.handle(IPC.GIT_DELETE_BRANCH, async (_e, repoPath: string, branch: string, force?: boolean) => {
+  return gitService.deleteBranch(repoPath, branch, force);
+});
+
+ipcMain.handle(IPC.GIT_MERGE, async (_e, opts: MergeOptions) => {
+  return gitService.merge(opts);
+});
+
+ipcMain.handle(IPC.GIT_PUSH, async (_e, opts: PushOptions) => {
+  return gitService.push(opts);
+});
+
+ipcMain.handle(IPC.GIT_FETCH, async (_e, repoPath: string, remote?: string) => {
+  return gitService.fetch(repoPath, remote);
+});
+
+ipcMain.handle(IPC.GIT_PULL, async (_e, opts: UpdateOptions) => {
+  return gitService.pull(opts);
+});
+
+ipcMain.handle(IPC.GIT_STASH_CREATE, async (_e, opts: StashCreateOptions) => {
+  return gitService.stashCreate(opts);
+});
+
+ipcMain.handle(IPC.GIT_STASH_APPLY, async (_e, opts: StashApplyOptions) => {
+  return gitService.stashApply(opts);
+});
+
+ipcMain.handle(IPC.GIT_STASH_DROP, async (_e, repoPath: string, stashIndex: number) => {
+  return gitService.stashDrop(repoPath, stashIndex);
 });
 
 app.on('before-quit', () => {

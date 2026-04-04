@@ -12,4 +12,18 @@ export const IPC = {
   APP_OPEN_EXTERNAL: 'app:open-external',
   APP_GET_SETTINGS: 'app:get-settings',
   APP_SAVE_SETTINGS: 'app:save-settings',
+
+  // Git management
+  GIT_SELECT_REPO: 'git:select-repo',
+  GIT_GET_REPO_STATUS: 'git:get-repo-status',
+  GIT_CHECKOUT_BRANCH: 'git:checkout-branch',
+  GIT_CREATE_BRANCH: 'git:create-branch',
+  GIT_DELETE_BRANCH: 'git:delete-branch',
+  GIT_MERGE: 'git:merge',
+  GIT_PUSH: 'git:push',
+  GIT_FETCH: 'git:fetch',
+  GIT_PULL: 'git:pull',
+  GIT_STASH_CREATE: 'git:stash-create',
+  GIT_STASH_APPLY: 'git:stash-apply',
+  GIT_STASH_DROP: 'git:stash-drop',
 } as const;

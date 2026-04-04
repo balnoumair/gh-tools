@@ -85,6 +85,8 @@ export default function PRItem({ pr, index }: PRItemProps) {
                 ? 'review'
                 : pr.mentionType === 'mentioned'
                 ? 'mention'
+                : pr.mentionType === 'authored'
+                ? 'author'
                 : 'assigned'}
             </span>
 
