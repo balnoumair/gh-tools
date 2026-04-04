@@ -21,10 +21,7 @@ export default function TrayApp() {
   const isAuthed = authStatus?.authenticated ?? false;
 
   return (
-    <div className="h-full flex flex-col bg-ghv-bg bg-grid relative overflow-hidden">
-      {/* Top accent border */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-ghv-accent/60 via-ghv-accent to-ghv-accent/60" />
-
+    <div className="h-full flex flex-col overflow-hidden">
       <TrayHeader />
 
       <div className="flex-1 overflow-y-auto min-h-0">

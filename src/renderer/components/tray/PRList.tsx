@@ -9,12 +9,12 @@ export default function PRList() {
     return (
       <div className="flex items-center justify-center h-full px-4">
         <div className="text-center space-y-2">
-          <div className="text-ghv-error text-xs font-mono">{error}</div>
+          <div className="text-mac-danger text-[13px]">{error}</div>
           <button
             onClick={() => usePRStore.getState().forceRefresh()}
-            className="text-2xs text-ghv-accent hover:text-ghv-accent-dim transition-colors font-mono"
+            className="text-[11px] text-mac-primary hover:underline transition-colors"
           >
-            retry
+            Retry
           </button>
         </div>
       </div>
@@ -24,10 +24,7 @@ export default function PRList() {
   if (isRefreshing && prs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 bg-ghv-accent rounded-full animate-pulse-dot" />
-          <span className="text-xs text-ghv-text-dim">Fetching PRs...</span>
-        </div>
+        <span className="text-[13px] text-mac-label-secondary">Loading...</span>
       </div>
     );
   }
@@ -35,26 +32,11 @@ export default function PRList() {
   if (prs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full px-6">
-        <div className="text-center space-y-3">
-          <div className="text-ghv-text-muted">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              className="mx-auto mb-2 opacity-30"
-            >
-              <path
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+        <div className="text-center space-y-1">
+          <div className="text-[13px] font-medium text-mac-label-secondary">
+            No Pull Requests
           </div>
-          <div className="text-xs text-ghv-text-dim">No PRs awaiting review</div>
-          <div className="text-2xs text-ghv-text-muted font-mono">
+          <div className="text-[11px] text-mac-label-tertiary">
             You're all caught up
           </div>
         </div>
@@ -63,7 +45,7 @@ export default function PRList() {
   }
 
   return (
-    <div className="divide-y divide-ghv-border/50">
+    <div className="divide-y divide-mac-separator">
       {prs.map((pr, i) => (
         <PRItem key={pr.id} pr={pr} index={i} />
       ))}
