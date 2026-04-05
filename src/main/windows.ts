@@ -33,7 +33,7 @@ export function createPopoverWindow(): BrowserWindow {
     skipTaskbar: true,
     transparent: true,
     backgroundColor: '#00000000',
-    vibrancy: 'popover',
+    vibrancy: 'menu',
     visualEffectState: 'active',
     hasShadow: true,
     webPreferences: {
@@ -77,7 +77,10 @@ export function createFullWindow(): BrowserWindow {
     show: false,
     frame: true,
     titleBarStyle: 'hiddenInset',
+    transparent: true,
     backgroundColor: '#00000000',
+    vibrancy: 'under-window',
+    visualEffectState: 'active',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
