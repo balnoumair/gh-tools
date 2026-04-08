@@ -19,26 +19,26 @@ export default function CreateBranchDialog() {
 
   return (
     <Dialog open={showCreateBranchDialog} onClose={() => setShowCreateBranchDialog(false)} title="New Branch">
-      <div className="space-y-4">
+      <div className="space-y-3.5">
         <div>
-          <label className="block text-[11px] text-mac-label-tertiary mb-1">Branch name</label>
+          <label className="block text-[11px] text-mac-label-secondary mb-1">Branch name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="feature/my-branch"
-            className="w-full px-2.5 py-1.5 text-[13px] bg-mac-fill/50 border border-mac-separator rounded-md text-mac-label placeholder:text-mac-label-tertiary focus:outline-none focus:ring-2 focus:ring-mac-primary/50 focus:border-mac-primary font-mono transition-colors"
+            className="mac-input w-full font-mono"
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             autoFocus
           />
         </div>
 
         <div>
-          <label className="block text-[11px] text-mac-label-tertiary mb-1">Start from (defaults to current: {currentBranch})</label>
+          <label className="block text-[11px] text-mac-label-secondary mb-1">Start from (defaults to current: {currentBranch})</label>
           <select
             value={startPoint}
             onChange={(e) => setStartPoint(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-[13px] bg-mac-fill/50 border border-mac-separator rounded-md text-mac-label focus:outline-none focus:ring-2 focus:ring-mac-primary/50 focus:border-mac-primary transition-colors"
+            className="mac-select w-full"
           >
             <option value="">Current branch ({currentBranch})</option>
             {localBranches.map((b) => (
@@ -47,17 +47,17 @@ export default function CreateBranchDialog() {
           </select>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-1">
           <button
             onClick={() => setShowCreateBranchDialog(false)}
-            className="px-3 py-1.5 text-[13px] text-mac-label-secondary hover:text-mac-label transition-colors rounded-md"
+            className="px-3 py-1 text-[13px] text-mac-label bg-mac-control-bg border border-mac-control-border rounded-md hover:bg-mac-control-active transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleCreate}
             disabled={!name.trim()}
-            className="px-3 py-1.5 text-[13px] bg-mac-primary text-white rounded-md hover:bg-mac-primary-hover active:brightness-90 transition-colors disabled:opacity-40"
+            className="px-3 py-1 text-[13px] bg-mac-accent text-white font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors disabled:opacity-35"
           >
             Create
           </button>

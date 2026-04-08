@@ -31,20 +31,20 @@ export default function PushDialog() {
 
   return (
     <Dialog open={showPushDialog} onClose={() => setShowPushDialog(false)} title="Push">
-      <div className="space-y-4">
+      <div className="space-y-3.5">
         <div>
-          <label className="block text-[11px] text-mac-label-tertiary mb-1">Branch</label>
-          <div className="px-2.5 py-1.5 text-[13px] bg-mac-fill/30 border border-mac-separator rounded-md text-mac-primary font-mono">
+          <label className="block text-[11px] text-mac-label-secondary mb-1">Branch</label>
+          <div className="px-[7px] py-[3px] text-[13px] bg-mac-control-bg border border-mac-control-border rounded-[5px] text-mac-selection-text font-mono">
             {currentBranch}
           </div>
         </div>
 
         <div>
-          <label className="block text-[11px] text-mac-label-tertiary mb-1">Remote</label>
+          <label className="block text-[11px] text-mac-label-secondary mb-1">Remote</label>
           <select
             value={remote}
             onChange={(e) => setRemote(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-[13px] bg-mac-fill/50 border border-mac-separator rounded-md text-mac-label focus:outline-none focus:ring-2 focus:ring-mac-primary/50 focus:border-mac-primary transition-colors"
+            className="mac-select w-full"
           >
             {remotes.length > 0
               ? remotes.map((r) => <option key={r} value={r}>{r}</option>)
@@ -53,38 +53,38 @@ export default function PushDialog() {
           </select>
         </div>
 
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 text-[13px] text-mac-label-secondary cursor-pointer">
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-[13px] text-mac-label cursor-pointer">
             <input
               type="checkbox"
               checked={skipHooks}
               onChange={(e) => setSkipHooks(e.target.checked)}
-              className="rounded border-mac-separator"
+              className="accent-[var(--mac-accent)]"
             />
             Skip pre-push hooks (--no-verify)
           </label>
 
-          <label className="flex items-center gap-2 text-[13px] text-mac-label-secondary cursor-pointer">
+          <label className="flex items-center gap-2 text-[13px] text-mac-label cursor-pointer">
             <input
               type="checkbox"
               checked={setUpstream}
               onChange={(e) => setSetUpstream(e.target.checked)}
-              className="rounded border-mac-separator"
+              className="accent-[var(--mac-accent)]"
             />
             Set upstream tracking
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-1">
           <button
             onClick={() => setShowPushDialog(false)}
-            className="px-3 py-1.5 text-[13px] text-mac-label-secondary hover:text-mac-label transition-colors rounded-md"
+            className="px-3 py-1 text-[13px] text-mac-label bg-mac-control-bg border border-mac-control-border rounded-md hover:bg-mac-control-active transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handlePush}
-            className="px-3 py-1.5 text-[13px] bg-mac-primary text-white rounded-md hover:bg-mac-primary-hover active:brightness-90 transition-colors"
+            className="px-3 py-1 text-[13px] bg-mac-accent text-white font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors"
           >
             Push
           </button>

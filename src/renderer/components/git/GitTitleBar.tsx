@@ -17,49 +17,76 @@ export default function GitTitleBar() {
   }, [showDropdown]);
 
   return (
-    <div className="h-10 border-b border-mac-separator flex items-center pl-[96px] pr-4 gap-3 drag-region shrink-0">
-      <span className="text-[13px] text-mac-label-secondary font-medium no-drag">
+    <div className="h-[38px] border-b border-mac-separator-heavy bg-mac-bg-toolbar flex items-center pl-[78px] pr-3 gap-2.5 drag-region shrink-0">
+      <span className="text-[13px] text-mac-label-secondary no-drag">
         Git Manager
       </span>
-      <div className="w-px h-4 bg-mac-separator" />
+      <div className="w-px h-3.5 bg-mac-separator-heavy" />
       <div className="relative no-drag" ref={dropdownRef}>
         <button
           onClick={() => setShowDropdown((v) => !v)}
-          className="flex items-center gap-1.5 text-[13px] text-mac-label hover:text-mac-primary transition-colors"
+          className="flex items-center gap-1 px-1.5 py-0.5 text-[13px] text-mac-label font-medium rounded hover:bg-mac-control-active active:bg-mac-separator transition-colors"
         >
-          <span className="font-medium">{activeRepo?.name ?? 'No repo'}</span>
-          <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M3 5l3 3 3-3" />
+          <span className="truncate max-w-[180px]">{activeRepo?.name ?? 'No repo'}</span>
+          <svg className="w-[7px] h-[4px] text-mac-label-tertiary shrink-0 ml-0.5" viewBox="0 0 7 4" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M0.5 0.5L3.5 3.5L6.5 0.5" />
           </svg>
         </button>
 
         {showDropdown && (
-          <div className="absolute top-full left-0 mt-1 w-64 bg-mac-fill-secondary/80 backdrop-blur-xl border border-mac-separator rounded-lg shadow-lg z-50">
-            <button
+          <div className="absolute top-full left-0 mt-[3px] w-56 bg-mac-bg-menu backdrop-blur-2xl border border-mac-separator-heavy rounded-md shadow-menu z-50 py-[3px] animate-menu-in">
+            <MenuItem
+              label="Open Repository..."
+              accent
               onClick={() => { selectRepo(); setShowDropdown(false); }}
-              className="w-full text-left px-3 py-2 text-[13px] text-mac-primary hover:bg-mac-fill/50 transition-colors border-b border-mac-separator rounded-t-lg"
-            >
-              Open Repository...
-            </button>
+            />
             {recentRepos.length > 0 && (
-              <div className="py-1 max-h-48 overflow-y-auto">
-                {recentRepos.map((repo) => (
-                  <button
-                    key={repo.path}
-                    onClick={() => { openRepo(repo); setShowDropdown(false); }}
-                    className={`w-full text-left px-3 py-1.5 text-[13px] hover:bg-mac-fill/50 transition-colors ${
-                      repo.path === activeRepo?.path ? 'text-mac-primary' : 'text-mac-label-secondary'
-                    }`}
-                  >
-                    <span className="block">{repo.name}</span>
-                    <span className="block text-[11px] text-mac-label-tertiary truncate">{repo.path}</span>
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="border-t border-mac-separator-heavy mx-2 my-[3px]" />
+                <div className="max-h-48 overflow-y-auto">
+                  {recentRepos.map((repo) => (
+                    <MenuItem
+                      key={repo.path}
+                      label={repo.name}
+                      sublabel={repo.path}
+                      active={repo.path === activeRepo?.path}
+                      onClick={() => { openRepo(repo); setShowDropdown(false); }}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function MenuItem({
+  label,
+  sublabel,
+  accent,
+  active,
+  onClick,
+}: {
+  label: string;
+  sublabel?: string;
+  accent?: boolean;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-[calc(100%-6px)] mx-[3px] text-left px-2 py-[3px] text-[13px] rounded-[4px] transition-colors
+        ${accent ? 'text-mac-accent' : active ? 'text-mac-selection-text' : 'text-mac-label'}
+        hover:bg-mac-accent hover:text-white`}
+    >
+      <span className="block truncate">{label}</span>
+      {sublabel && (
+        <span className="block text-[11px] truncate opacity-50">{sublabel}</span>
+      )}
+    </button>
   );
 }

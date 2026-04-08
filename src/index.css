@@ -2,36 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --- macOS System Colors --- */
+/*
+ * macOS-native color system
+ * Modeled after Finder, Xcode, and system panels in macOS Sequoia dark mode.
+ * Uses the real NSColor semantic palette mapped to CSS custom properties.
+ */
 :root {
-  --mac-primary: rgba(0, 122, 255, 1);
-  --mac-primary-hover: rgba(0, 100, 220, 1);
+  color-scheme: light dark;
+
+  /* Accent */
+  --mac-accent: #007AFF;
+  --mac-accent-hover: #0062CC;
+  --mac-accent-active: #004DA6;
+
+  /* Labels */
   --mac-label: rgba(0, 0, 0, 0.85);
-  --mac-label-secondary: rgba(60, 60, 67, 0.6);
-  --mac-label-tertiary: rgba(60, 60, 67, 0.3);
-  --mac-separator: rgba(60, 60, 67, 0.12);
-  --mac-fill: rgba(120, 120, 128, 0.2);
-  --mac-fill-secondary: rgba(120, 120, 128, 0.12);
-  --mac-success: rgba(52, 199, 89, 1);
-  --mac-warning: rgba(255, 149, 0, 1);
-  --mac-danger: rgba(255, 59, 48, 1);
-  --mac-purple: rgba(175, 82, 222, 1);
+  --mac-label-secondary: rgba(0, 0, 0, 0.50);
+  --mac-label-tertiary: rgba(0, 0, 0, 0.26);
+  --mac-label-quaternary: rgba(0, 0, 0, 0.10);
+
+  /* Backgrounds — opaque surfaces */
+  --mac-bg-window: #ECECEC;
+  --mac-bg-content: #FFFFFF;
+  --mac-bg-sidebar: #F5F5F5;
+  --mac-bg-under-page: #E8E8E8;
+  --mac-bg-toolbar: #F0F0F0;
+
+  /* Elevated surfaces */
+  --mac-bg-popover: rgba(255, 255, 255, 0.98);
+  --mac-bg-menu: rgba(246, 246, 246, 0.95);
+
+  /* Fills — for controls */
+  --mac-control-bg: #FFFFFF;
+  --mac-control-border: rgba(0, 0, 0, 0.12);
+  --mac-control-bg-active: rgba(0, 0, 0, 0.06);
+
+  /* Separators */
+  --mac-separator: rgba(0, 0, 0, 0.08);
+  --mac-separator-heavy: rgba(0, 0, 0, 0.14);
+
+  /* Semantic status */
+  --mac-green: #34C759;
+  --mac-orange: #FF9500;
+  --mac-red: #FF3B30;
+  --mac-purple: #AF52DE;
+
+  /* Selection */
+  --mac-selection: rgba(0, 122, 255, 0.15);
+  --mac-selection-text: #007AFF;
+
+  /* Shadows */
+  --mac-shadow-menu: 0 6px 20px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.10);
+  --mac-shadow-dialog: 0 16px 48px rgba(0, 0, 0, 0.22), 0 0 1px rgba(0, 0, 0, 0.10);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --mac-primary: rgba(10, 132, 255, 1);
-    --mac-primary-hover: rgba(30, 150, 255, 1);
+    --mac-accent: #0A84FF;
+    --mac-accent-hover: #409CFF;
+    --mac-accent-active: #0070E0;
+
     --mac-label: rgba(255, 255, 255, 0.85);
-    --mac-label-secondary: rgba(235, 235, 245, 0.6);
-    --mac-label-tertiary: rgba(235, 235, 245, 0.3);
-    --mac-separator: rgba(84, 84, 88, 0.36);
-    --mac-fill: rgba(120, 120, 128, 0.36);
-    --mac-fill-secondary: rgba(120, 120, 128, 0.2);
-    --mac-success: rgba(48, 209, 88, 1);
-    --mac-warning: rgba(255, 159, 10, 1);
-    --mac-danger: rgba(255, 69, 58, 1);
-    --mac-purple: rgba(191, 90, 242, 1);
+    --mac-label-secondary: rgba(255, 255, 255, 0.55);
+    --mac-label-tertiary: rgba(255, 255, 255, 0.26);
+    --mac-label-quaternary: rgba(255, 255, 255, 0.10);
+
+    --mac-bg-window: #1E1E1E;
+    --mac-bg-content: #232323;
+    --mac-bg-sidebar: #2B2B2D;
+    --mac-bg-under-page: #1A1A1A;
+    --mac-bg-toolbar: #2C2C2E;
+
+    --mac-bg-popover: rgba(50, 50, 52, 0.98);
+    --mac-bg-menu: rgba(42, 42, 44, 0.88);
+
+    --mac-control-bg: rgba(255, 255, 255, 0.07);
+    --mac-control-border: rgba(255, 255, 255, 0.10);
+    --mac-control-bg-active: rgba(255, 255, 255, 0.12);
+
+    --mac-separator: rgba(255, 255, 255, 0.08);
+    --mac-separator-heavy: rgba(255, 255, 255, 0.14);
+
+    --mac-green: #30D158;
+    --mac-orange: #FF9F0A;
+    --mac-red: #FF453A;
+    --mac-purple: #BF5AF2;
+
+    --mac-selection: rgba(10, 132, 255, 0.22);
+    --mac-selection-text: #0A84FF;
+
+    --mac-shadow-menu: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 1px rgba(0, 0, 0, 0.40);
+    --mac-shadow-dialog: 0 16px 48px rgba(0, 0, 0, 0.60), 0 0 1px rgba(0, 0, 0, 0.40);
   }
 }
 
@@ -54,47 +115,76 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
+  font-size: 13px;
 }
 
-/* --- Scrollbar --- */
-::-webkit-scrollbar {
-  width: 7px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+/* --- macOS NSTextField-style input --- */
+.mac-input {
+  background: var(--mac-control-bg);
+  border: 0.5px solid var(--mac-control-border);
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 13px;
+  color: var(--mac-label);
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.25);
-  }
+.mac-input::placeholder {
+  color: var(--mac-label-tertiary);
 }
+
+.mac-input:focus {
+  border-color: var(--mac-accent);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.30);
+}
+
+/* --- macOS NSPopUpButton-style select --- */
+.mac-select {
+  background: var(--mac-control-bg);
+  border: 0.5px solid var(--mac-control-border);
+  border-radius: 5px;
+  padding: 3px 24px 3px 7px;
+  font-size: 13px;
+  color: var(--mac-label);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='7' height='4' viewBox='0 0 7 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0.5 0.5L3.5 3.5L6.5 0.5' stroke='%23888' stroke-width='1' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.mac-select:focus {
+  border-color: var(--mac-accent);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.30);
+}
+
+/* --- Scrollbar (macOS-style thin overlay) --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--mac-label-quaternary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--mac-label-tertiary); }
+
+/* --- Drag region for title bar --- */
+.drag-region { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
 
 /* --- Animations --- */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(2px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
 }
-
-.animate-fade-in {
-  animation: fade-in 0.15s ease-out both;
+@keyframes menu-in {
+  from { opacity: 0; transform: scale(0.97) translateY(-2px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.animate-pulse-dot {
-  animation: pulse-dot 2s ease-in-out infinite;
-}
+.animate-fade-in { animation: fade-in 0.15s ease-out both; }
+.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.animate-menu-in { animation: menu-in 0.10s ease-out both; }

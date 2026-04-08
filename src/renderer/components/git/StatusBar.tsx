@@ -6,25 +6,25 @@ export default function StatusBar() {
 
   const statusColor = {
     idle: 'text-mac-label-tertiary',
-    running: 'text-mac-primary',
-    success: 'text-mac-success',
-    error: 'text-mac-danger',
+    running: 'text-mac-accent',
+    success: 'text-mac-green',
+    error: 'text-mac-red',
   }[operationStatus];
 
   return (
-    <div className="h-6 border-t border-mac-separator flex items-center px-3 gap-4 text-[11px] shrink-0">
+    <div className="h-[22px] border-t border-mac-separator-heavy bg-mac-bg-toolbar flex items-center px-3 gap-3 text-[11px] shrink-0">
       {repoStatus && (
         <>
-          <span className="text-mac-primary font-mono">
+          <span className="text-mac-selection-text font-mono font-medium">
             {repoStatus.currentBranch}
           </span>
           {repoStatus.hasUncommittedChanges && (
-            <span className="text-mac-warning">
+            <span className="text-mac-orange font-medium tabular-nums">
               {repoStatus.modifiedCount}M {repoStatus.stagedCount}S {repoStatus.untrackedCount}U
             </span>
           )}
           {repoStatus.conflictCount > 0 && (
-            <span className="text-mac-danger">{repoStatus.conflictCount} conflicts</span>
+            <span className="text-mac-red font-medium">{repoStatus.conflictCount} conflicts</span>
           )}
         </>
       )}
