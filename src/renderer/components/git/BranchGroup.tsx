@@ -14,21 +14,19 @@ export default function BranchGroup({ label, count, defaultOpen = false, childre
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-mac-label-tertiary uppercase tracking-wider hover:bg-mac-fill/50 transition-colors"
+        className="w-full flex items-center gap-1 px-3 py-[3px] text-[11px] text-mac-label-secondary font-semibold uppercase tracking-wide hover:bg-mac-control-active transition-colors"
       >
         <svg
-          className={`w-3 h-3 transition-transform ${open ? 'rotate-90' : ''}`}
-          viewBox="0 0 12 12"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
+          className={`w-[8px] h-[8px] text-mac-label-tertiary transition-transform duration-100 ${open ? 'rotate-90' : ''}`}
+          viewBox="0 0 8 8"
+          fill="currentColor"
         >
-          <path d="M4 2l4 4-4 4" />
+          <path d="M2 1l4 3-4 3z" />
         </svg>
-        <span>{label}</span>
-        <span className="text-mac-label-tertiary/60 ml-auto">{count}</span>
+        <span className="ml-0.5">{label}</span>
+        <span className="text-mac-label-quaternary ml-auto text-[10px] tabular-nums">{count}</span>
       </button>
-      {open && <div>{children}</div>}
+      {open && <div className="pb-0.5">{children}</div>}
     </div>
   );
 }

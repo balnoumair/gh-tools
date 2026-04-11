@@ -11,8 +11,8 @@ export default function OutputPanel() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex items-center justify-between px-3 py-1 border-b border-mac-separator shrink-0">
-        <span className="text-[11px] text-mac-label-tertiary uppercase tracking-wider">Output</span>
+      <div className="flex items-center justify-between px-3 py-[3px] border-b border-mac-separator-heavy shrink-0">
+        <span className="text-[11px] text-mac-label-secondary font-semibold uppercase tracking-wide">Output</span>
         {outputLog.length > 0 && (
           <button
             onClick={clearOutput}
@@ -22,7 +22,7 @@ export default function OutputPanel() {
           </button>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-2 font-mono text-[11px]">
+      <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] leading-[1.6]">
         {outputLog.length === 0 ? (
           <p className="text-mac-label-tertiary">No output yet. Run a git operation to see results here.</p>
         ) : (
@@ -32,8 +32,8 @@ export default function OutputPanel() {
             return (
               <div
                 key={i}
-                className={`py-0.5 leading-relaxed ${
-                  isError ? 'text-mac-danger' : isSuccess ? 'text-mac-success' : 'text-mac-label-secondary'
+                className={`py-px ${
+                  isError ? 'text-mac-red' : isSuccess ? 'text-mac-green' : 'text-mac-label-secondary'
                 }`}
               >
                 {line}

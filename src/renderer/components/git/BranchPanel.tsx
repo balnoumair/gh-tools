@@ -29,18 +29,18 @@ export default function BranchPanel() {
   }, [repoStatus, filter]);
 
   return (
-    <div className="w-[280px] border-r border-mac-separator flex flex-col shrink-0">
-      <div className="p-2 border-b border-mac-separator">
+    <div className="w-[240px] bg-mac-bg-sidebar border-r border-mac-separator-heavy flex flex-col shrink-0">
+      <div className="px-2 py-1.5">
         <input
           type="text"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter branches..."
-          className="w-full px-2.5 py-1.5 text-[13px] bg-mac-fill/50 border border-mac-separator rounded-md text-mac-label placeholder:text-mac-label-tertiary focus:outline-none focus:ring-2 focus:ring-mac-primary/50 focus:border-mac-primary transition-colors"
+          className="mac-input w-full text-[12px]"
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto py-1">
+      <div className="flex-1 overflow-y-auto">
         <BranchGroup label="Local Branches" count={local.length} defaultOpen>
           {local.map((b) => (
             <BranchItem key={b.name} branch={b} />

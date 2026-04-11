@@ -41,28 +41,24 @@ export default function BranchItem({ branch }: Props) {
       <div
         onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
-        className={`flex items-center gap-2 px-3 py-1 mx-1 rounded-md text-[11px] cursor-default select-none transition-colors hover:bg-mac-fill/50 ${
-          branch.current ? 'text-mac-primary' : 'text-mac-label-secondary'
-        }`}
+        className={`flex items-center gap-1.5 pl-6 pr-2 py-[2px] mx-1 rounded-[4px] text-[12px] cursor-default select-none transition-colors
+          ${branch.current
+            ? 'bg-mac-selection text-mac-selection-text'
+            : 'hover:bg-mac-control-active text-mac-label'
+          }`}
       >
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${branch.current ? 'bg-mac-primary' : 'bg-transparent'}`} />
-
-        <span className="truncate font-mono text-[11px]" title={branch.name}>
+        <span className={`truncate font-mono text-[11px] ${branch.current ? 'font-medium' : ''}`} title={branch.name}>
           {displayName}
         </span>
 
         {branch.current && (branch.ahead > 0 || branch.behind > 0) && (
-          <span className="ml-auto flex items-center gap-1 text-[10px] shrink-0">
-            {branch.ahead > 0 && (
-              <span className="text-mac-success">↑{branch.ahead}</span>
-            )}
-            {branch.behind > 0 && (
-              <span className="text-mac-warning">↓{branch.behind}</span>
-            )}
+          <span className="ml-auto flex items-center gap-0.5 text-[10px] shrink-0 font-medium tabular-nums">
+            {branch.ahead > 0 && <span className="text-mac-green">↑{branch.ahead}</span>}
+            {branch.behind > 0 && <span className="text-mac-orange">↓{branch.behind}</span>}
           </span>
         )}
 
-        <span className="ml-auto text-[10px] text-mac-label-tertiary font-mono shrink-0">
+        <span className="ml-auto text-[10px] text-mac-label-quaternary font-mono shrink-0">
           {branch.commitHash}
         </span>
       </div>
@@ -70,9 +66,15 @@ export default function BranchItem({ branch }: Props) {
       {contextMenu && (
         <div
           ref={menuRef}
-          className="fixed bg-mac-fill-secondary/80 backdrop-blur-xl border border-mac-separator rounded-lg shadow-lg z-[100] py-1 min-w-[180px]"
+          className="fixed bg-mac-bg-menu backdrop-blur-2xl border border-mac-separator-heavy rounded-md shadow-menu z-[100] py-[3px] min-w-[200px] animate-menu-in"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
+          {branch.current && (
+            <ContextMenuItem
+              label="Copy Branch Name"
+              onClick={() => { navigator.clipboard.writeText(branch.name); setContextMenu(null); }}
+            />
+          )}
           {!branch.current && (
             <ContextMenuItem
               label="Checkout"
@@ -81,7 +83,7 @@ export default function BranchItem({ branch }: Props) {
           )}
           {!branch.current && !branch.isRemote && (
             <ContextMenuItem
-              label={`Merge '${displayName}' into '${repoStatus?.currentBranch}'`}
+              label={`Merge into '${repoStatus?.currentBranch}'`}
               onClick={() => {
                 setContextMenu(null);
                 useGitStore.getState().merge({
@@ -93,7 +95,7 @@ export default function BranchItem({ branch }: Props) {
           )}
           {!branch.current && !branch.isRemote && (
             <>
-              <div className="border-t border-mac-separator my-1" />
+              <div className="border-t border-mac-separator-heavy mx-2 my-[3px]" />
               <ContextMenuItem
                 label="Delete"
                 danger
@@ -124,11 +126,9 @@ function ContextMenuItem({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-3 py-1.5 text-[13px] transition-colors ${
-        danger
-          ? 'text-mac-danger hover:bg-mac-danger/10'
-          : 'text-mac-label-secondary hover:bg-mac-fill/50 hover:text-mac-label'
-      }`}
+      className={`w-[calc(100%-6px)] mx-[3px] text-left px-2 py-[3px] text-[13px] rounded-[4px] transition-colors
+        ${danger ? 'text-mac-red' : 'text-mac-label'}
+        hover:bg-mac-accent hover:text-white`}
     >
       {label}
     </button>
