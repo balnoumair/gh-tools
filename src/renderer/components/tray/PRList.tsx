@@ -8,13 +8,13 @@ export default function PRList() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-full px-4">
-        <div className="text-center space-y-2">
-          <div className="text-mac-danger text-[13px]">{error}</div>
+        <div className="text-center space-y-2 animate-fade-in">
+          <div className="text-mac-red text-[13px]">{error}</div>
           <button
             onClick={() => usePRStore.getState().forceRefresh()}
-            className="text-[11px] text-mac-primary hover:underline transition-colors"
+            className="text-[11px] text-mac-accent hover:text-mac-accent-hover transition-colors"
           >
-            Retry
+            Try again
           </button>
         </div>
       </div>
@@ -24,7 +24,10 @@ export default function PRList() {
   if (isRefreshing && prs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <span className="text-[13px] text-mac-label-secondary">Loading...</span>
+        <div className="flex items-center gap-2 text-[12px] text-mac-label-tertiary">
+          <span className="claude-mark text-mac-accent w-3 h-3 animate-spark" aria-hidden />
+          <span>Loading…</span>
+        </div>
       </div>
     );
   }
@@ -32,12 +35,12 @@ export default function PRList() {
   if (prs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full px-6">
-        <div className="text-center space-y-1">
-          <div className="text-[13px] font-medium text-mac-label-secondary">
-            No Pull Requests
+        <div className="text-center space-y-2 animate-fade-in">
+          <div className="text-[16px] text-mac-label font-display italic">
+            All caught up
           </div>
-          <div className="text-[11px] text-mac-label-tertiary">
-            You're all caught up
+          <div className="text-[12px] text-mac-label-tertiary">
+            Nothing waiting on you right now.
           </div>
         </div>
       </div>

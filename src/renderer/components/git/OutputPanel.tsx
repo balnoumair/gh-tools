@@ -11,24 +11,37 @@ export default function OutputPanel() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex items-center justify-between px-3 py-[3px] border-b border-mac-separator-heavy shrink-0">
-        <span className="text-[11px] text-mac-label-secondary font-semibold uppercase tracking-wide">Output</span>
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-mac-separator shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[10.5px] text-mac-label-tertiary font-medium uppercase tracking-[0.10em]">Output</span>
+          {outputLog.length > 0 && (
+            <span className="text-[10px] text-mac-label-quaternary tabular-nums font-mono">
+              {outputLog.length} {outputLog.length === 1 ? 'line' : 'lines'}
+            </span>
+          )}
+        </div>
         {outputLog.length > 0 && (
           <button
             onClick={clearOutput}
-            className="text-[11px] text-mac-label-tertiary hover:text-mac-label-secondary transition-colors"
+            className="text-[10.5px] text-mac-label-tertiary hover:text-mac-accent transition-colors px-2 py-0.5 rounded hover:bg-mac-control-hover"
           >
             Clear
           </button>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] leading-[1.6]">
+      <div className="flex-1 overflow-y-auto px-4 py-3 font-mono text-[11px] leading-[1.65]">
         {outputLog.length === 0 ? (
-          <p className="text-mac-label-tertiary">No output yet. Run a git operation to see results here.</p>
+          <div className="h-full flex items-center justify-center">
+            <p className="text-mac-label-tertiary italic font-display text-[14px]">
+              Run a git operation to see output here.
+            </p>
+          </div>
         ) : (
           outputLog.map((line, i) => {
-            const isError = line.toLowerCase().includes('failed') || line.toLowerCase().includes('error');
-            const isSuccess = line.toLowerCase().includes('completed') || line.toLowerCase().includes('merged') || line.toLowerCase().includes('switched');
+            const lower = line.toLowerCase();
+            const isError = lower.includes('failed') || lower.includes('error');
+            const isSuccess =
+              lower.includes('completed') || lower.includes('merged') || lower.includes('switched');
             return (
               <div
                 key={i}
