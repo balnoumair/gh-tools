@@ -27,7 +27,7 @@ export default function FullApp() {
   if (!activeRepo) return <RepoPickerEmpty />;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-mac-bg-window">
+    <div className="h-full flex flex-col overflow-hidden bg-app-canvas">
       <GitTitleBar />
       <GitToolbar />
 
@@ -43,11 +43,9 @@ export default function FullApp() {
 
       {isLoadingStatus && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
-          <div className="flex items-center gap-2 px-4 py-2 bg-mac-bg-popover rounded-lg shadow-menu text-[13px] text-mac-label-secondary">
-            <svg className="w-4 h-4 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M8 2a6 6 0 1 1-6 6" />
-            </svg>
-            Loading...
+          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-mac-bg-popover rounded-xl shadow-menu text-[12.5px] text-mac-label">
+            <span className="claude-mark text-mac-accent w-3.5 h-3.5 animate-spark" aria-hidden />
+            <span>Loading…</span>
           </div>
         </div>
       )}

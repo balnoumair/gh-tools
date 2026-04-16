@@ -21,7 +21,7 @@ export default function TrayApp() {
   const isAuthed = authStatus?.authenticated ?? false;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-app-canvas">
       <TrayHeader />
 
       <div className="flex-1 overflow-y-auto min-h-0">
