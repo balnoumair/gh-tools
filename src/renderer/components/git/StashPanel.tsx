@@ -37,7 +37,7 @@ export default function StashPanel() {
       {open && (
         <div className="max-h-40 overflow-y-auto pb-1">
           {stashes.length === 0 ? (
-            <p className="px-3 py-1.5 text-[11.5px] text-mac-label-tertiary italic font-display">No stashes</p>
+            <p className="px-3 py-1.5 text-[11.5px] text-mac-label-tertiary">No stashes</p>
           ) : (
             stashes.map((stash) => (
               <div

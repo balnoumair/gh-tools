@@ -20,7 +20,7 @@ export default function AuthPrompt() {
         <div className="flex flex-col items-center gap-3">
           <span className="gh-mark text-mac-accent w-8 h-8 animate-spark" aria-hidden />
           <div className="text-center space-y-1.5">
-            <div className="text-[20px] font-display italic text-mac-label leading-none">
+            <div className="text-[16px] font-semibold text-mac-label leading-none tracking-tight">
               Connect GitHub
             </div>
             <div className="text-[12px] text-mac-label-secondary leading-relaxed">

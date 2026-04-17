@@ -48,7 +48,6 @@ const config: Config = {
       fontFamily: {
         sans: ['Geist', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Helvetica Neue', 'sans-serif'],
         mono: ['Geist Mono', 'SF Mono', 'Menlo', 'monospace'],
-        display: ['Instrument Serif', 'Iowan Old Style', 'Apple Garamond', 'Georgia', 'serif'],
       },
       borderRadius: {
         sm: '4px',

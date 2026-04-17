@@ -5,7 +5,7 @@
 /*
  * Dark, brand-neutral theme for gh-viewer.
  * Deep surfaces, hairline separators, neutral white accent,
- * refined Geist typography with an Instrument Serif accent for hero headings.
+ * Geist sans for body, Geist Mono for display (terminal-style hero headings).
  */
 :root {
   color-scheme: dark;
@@ -64,7 +64,6 @@
 
   /* Type */
   --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-  --font-display: 'Instrument Serif', 'Iowan Old Style', 'Apple Garamond', Georgia, serif;
   --font-mono: 'Geist Mono', 'SF Mono', Menlo, monospace;
 }
 
@@ -92,12 +91,6 @@ body {
   letter-spacing: -0.005em;
 }
 
-/* --- Display heading --- */
-.font-display {
-  font-family: var(--font-display);
-  font-feature-settings: 'kern', 'liga', 'dlig';
-  letter-spacing: -0.01em;
-}
 
 /* --- Backdrop grain (very subtle) --- */
 .bg-app-canvas {

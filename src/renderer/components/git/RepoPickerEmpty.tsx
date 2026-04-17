@@ -27,7 +27,7 @@ export default function RepoPickerEmpty() {
         <div className="w-full max-w-[440px] flex flex-col items-center text-center animate-fade-in">
           <span className="gh-mark text-mac-accent w-7 h-7 mb-5 animate-spark" aria-hidden />
 
-          <h1 className="font-display italic text-[36px] leading-[1.05] text-mac-label tracking-tight">
+          <h1 className="text-[28px] font-semibold leading-[1.1] text-mac-label tracking-tight">
             What's up next, {name}?
           </h1>
           <p className="text-[13px] text-mac-label-tertiary mt-2 mb-8">
