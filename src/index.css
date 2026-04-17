@@ -18,23 +18,23 @@
   --mac-accent-glow: rgba(255, 255, 255, 0.14);
 
   /* Labels */
-  --mac-label: rgba(245, 244, 242, 0.95);
-  --mac-label-secondary: rgba(245, 244, 242, 0.62);
-  --mac-label-tertiary: rgba(245, 244, 242, 0.40);
-  --mac-label-quaternary: rgba(245, 244, 242, 0.18);
+  --mac-label: rgba(244, 244, 244, 0.95);
+  --mac-label-secondary: rgba(244, 244, 244, 0.62);
+  --mac-label-tertiary: rgba(244, 244, 244, 0.40);
+  --mac-label-quaternary: rgba(244, 244, 244, 0.18);
 
-  /* Backgrounds — opaque dark surfaces */
-  --mac-bg-window: #1A1816;        /* outer chrome */
-  --mac-bg-content: #1F1D1B;       /* main canvas */
-  --mac-bg-sidebar: #16140F;       /* slightly darker sidebar */
-  --mac-bg-under-page: #131110;
-  --mac-bg-toolbar: #1A1816;
+  /* Backgrounds — neutral dark surfaces */
+  --mac-bg-window: #171717;        /* outer chrome */
+  --mac-bg-content: #1C1C1C;       /* main canvas */
+  --mac-bg-sidebar: #121212;       /* slightly darker sidebar */
+  --mac-bg-under-page: #0F0F0F;
+  --mac-bg-toolbar: #171717;
 
   /* Elevated surfaces */
-  --mac-bg-popover: rgba(36, 34, 32, 0.96);
-  --mac-bg-menu: rgba(32, 30, 28, 0.92);
-  --mac-bg-card: #232120;          /* stat cards / tiles */
-  --mac-bg-card-soft: #2A2826;     /* tile-on-card */
+  --mac-bg-popover: rgba(34, 34, 34, 0.96);
+  --mac-bg-menu: rgba(30, 30, 30, 0.92);
+  --mac-bg-card: #212121;          /* stat cards / tiles */
+  --mac-bg-card-soft: #262626;     /* tile-on-card */
 
   /* Fills — for controls */
   --mac-control-bg: rgba(255, 255, 255, 0.04);

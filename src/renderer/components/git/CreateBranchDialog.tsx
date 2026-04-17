@@ -57,7 +57,7 @@ export default function CreateBranchDialog() {
           <button
             onClick={handleCreate}
             disabled={!name.trim()}
-            className="px-3 py-1 text-[13px] bg-mac-accent text-[#1A1816] font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors disabled:opacity-35"
+            className="px-3 py-1 text-[13px] bg-mac-accent text-[#171717] font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors disabled:opacity-35"
           >
             Create
           </button>

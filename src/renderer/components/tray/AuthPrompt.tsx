@@ -50,7 +50,7 @@ export default function AuthPrompt() {
             type="submit"
             disabled={!token.trim() || isSubmitting}
             className="w-full py-2 text-[13px] font-medium rounded-lg
-                       bg-mac-accent text-[#1A1816]
+                       bg-mac-accent text-[#171717]
                        hover:bg-mac-accent-hover active:bg-mac-accent-active
                        disabled:opacity-40 disabled:hover:bg-mac-accent
                        transition-colors shadow-[0_1px_0_rgba(255,255,255,0.08)_inset]"

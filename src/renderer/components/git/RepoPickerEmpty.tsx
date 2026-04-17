@@ -37,7 +37,7 @@ export default function RepoPickerEmpty() {
           <button
             onClick={selectRepo}
             className="group relative px-5 py-2.5 rounded-full
-                       bg-mac-accent text-[#1A1816] text-[13px] font-medium
+                       bg-mac-accent text-[#171717] text-[13px] font-medium
                        hover:bg-mac-accent-hover active:bg-mac-accent-active
                        transition-all
                        shadow-[0_1px_0_rgba(255,255,255,0.10)_inset,0_8px_24px_-8px_rgba(0,0,0,0.60)]"

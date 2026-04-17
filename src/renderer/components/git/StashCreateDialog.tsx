@@ -48,7 +48,7 @@ export default function StashCreateDialog() {
           </button>
           <button
             onClick={handleCreate}
-            className="px-3 py-1 text-[13px] bg-mac-accent text-[#1A1816] font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors"
+            className="px-3 py-1 text-[13px] bg-mac-accent text-[#171717] font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors"
           >
             Shelve
           </button>

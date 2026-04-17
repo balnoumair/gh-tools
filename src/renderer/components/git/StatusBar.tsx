@@ -23,7 +23,7 @@ export default function StatusBar() {
           </span>
 
           {repoStatus.hasUncommittedChanges && (
-            <span className="text-mac-orange font-medium tabular-nums font-mono text-[10.5px]">
+            <span className="text-mac-label-secondary font-medium tabular-nums font-mono text-[10.5px]">
               {repoStatus.modifiedCount}M · {repoStatus.stagedCount}S · {repoStatus.untrackedCount}U
             </span>
           )}
