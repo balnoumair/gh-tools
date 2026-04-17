@@ -61,7 +61,7 @@ export default function MergeDialog() {
           <button
             onClick={handleMerge}
             disabled={!sourceBranch}
-            className="px-3 py-1 text-[13px] bg-mac-accent text-white font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors disabled:opacity-35"
+            className="px-3 py-1 text-[13px] bg-mac-accent text-[#171717] font-medium rounded-md hover:bg-mac-accent-hover active:bg-mac-accent-active transition-colors disabled:opacity-35"
           >
             Merge
           </button>

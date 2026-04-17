@@ -44,7 +44,7 @@ export default function FullApp() {
       {isLoadingStatus && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
           <div className="flex items-center gap-2.5 px-4 py-2.5 bg-mac-bg-popover rounded-xl shadow-menu text-[12.5px] text-mac-label">
-            <span className="claude-mark text-mac-accent w-3.5 h-3.5 animate-spark" aria-hidden />
+            <span className="gh-mark text-mac-accent w-3.5 h-3.5 animate-spark" aria-hidden />
             <span>Loading…</span>
           </div>
         </div>

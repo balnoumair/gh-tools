@@ -56,7 +56,7 @@ export default function PRStatusBadge({ pr }: { pr: PullRequest }) {
       style={{
         color: 'var(--mac-accent)',
         background: 'var(--mac-accent-soft)',
-        borderColor: 'rgba(217, 119, 87, 0.22)',
+        borderColor: 'rgba(255, 255, 255, 0.18)',
       }}
     >
       open

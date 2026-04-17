@@ -32,7 +32,7 @@ export default function OutputPanel() {
       <div className="flex-1 overflow-y-auto px-4 py-3 font-mono text-[11px] leading-[1.65]">
         {outputLog.length === 0 ? (
           <div className="h-full flex items-center justify-center">
-            <p className="text-mac-label-tertiary italic font-display text-[14px]">
+            <p className="text-mac-label-tertiary text-[14px]">
               Run a git operation to see output here.
             </p>
           </div>

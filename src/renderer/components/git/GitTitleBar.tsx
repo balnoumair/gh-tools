@@ -19,7 +19,7 @@ export default function GitTitleBar() {
   return (
     <div className="h-[40px] bg-mac-bg-toolbar flex items-center pl-[78px] pr-3 gap-3 drag-region shrink-0">
       <div className="flex items-center gap-2 no-drag">
-        <span className="claude-mark text-mac-accent w-[12px] h-[12px]" aria-hidden />
+        <span className="gh-mark text-mac-accent w-[12px] h-[12px]" aria-hidden />
         <span className="text-[12px] text-mac-label-secondary tracking-tight">
           Git Manager
         </span>
@@ -89,7 +89,7 @@ function MenuItem({
       onClick={onClick}
       className={`w-[calc(100%-8px)] mx-1 text-left px-2.5 py-1.5 text-[12.5px] rounded-md transition-colors
         ${accent ? 'text-mac-accent' : active ? 'text-mac-accent' : 'text-mac-label'}
-        hover:bg-mac-accent hover:text-white`}
+        hover:bg-mac-accent hover:text-[#171717]`}
     >
       <span className="block truncate tracking-tight">{label}</span>
       {sublabel && (
