@@ -12,7 +12,7 @@ export default function RepoPickerEmpty() {
   const name = getGreetingName();
 
   return (
-    <div className="h-full flex flex-col bg-app-canvas">
+    <div className="h-full flex flex-col bg-mac-bg-sidebar">
       {/* Title bar (drag region only — no chrome label) */}
       <div className="h-[38px] flex items-center pl-[78px] pr-3 drag-region shrink-0">
         <div className="flex items-center gap-2 no-drag">
