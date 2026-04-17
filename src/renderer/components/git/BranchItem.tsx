@@ -131,7 +131,7 @@ function ContextMenuItem({
       onClick={onClick}
       className={`w-[calc(100%-8px)] mx-1 text-left px-2.5 py-1.5 text-[12.5px] rounded-md transition-colors tracking-tight
         ${danger ? 'text-mac-red' : 'text-mac-label'}
-        hover:bg-mac-accent hover:text-white`}
+        hover:bg-mac-accent hover:text-[#1A1816]`}
     >
       {label}
     </button>

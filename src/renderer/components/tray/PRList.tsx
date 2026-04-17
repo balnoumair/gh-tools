@@ -25,7 +25,7 @@ export default function PRList() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center gap-2 text-[12px] text-mac-label-tertiary">
-          <span className="claude-mark text-mac-accent w-3 h-3 animate-spark" aria-hidden />
+          <span className="gh-mark text-mac-accent w-3 h-3 animate-spark" aria-hidden />
           <span>Loading…</span>
         </div>
       </div>

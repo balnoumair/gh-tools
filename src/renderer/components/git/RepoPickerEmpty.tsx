@@ -16,7 +16,7 @@ export default function RepoPickerEmpty() {
       {/* Title bar (drag region only — no chrome label) */}
       <div className="h-[38px] flex items-center pl-[78px] pr-3 drag-region shrink-0">
         <div className="flex items-center gap-2 no-drag">
-          <span className="claude-mark text-mac-accent w-[12px] h-[12px]" aria-hidden />
+          <span className="gh-mark text-mac-accent w-[12px] h-[12px]" aria-hidden />
           <span className="text-[12px] text-mac-label-secondary tracking-tight">
             Git Manager
           </span>
@@ -25,7 +25,7 @@ export default function RepoPickerEmpty() {
 
       <div className="flex-1 flex items-center justify-center px-8 pb-16">
         <div className="w-full max-w-[440px] flex flex-col items-center text-center animate-fade-in">
-          <span className="claude-mark text-mac-accent w-7 h-7 mb-5 animate-spark" aria-hidden />
+          <span className="gh-mark text-mac-accent w-7 h-7 mb-5 animate-spark" aria-hidden />
 
           <h1 className="font-display italic text-[36px] leading-[1.05] text-mac-label tracking-tight">
             What's up next, {name}?
@@ -37,10 +37,10 @@ export default function RepoPickerEmpty() {
           <button
             onClick={selectRepo}
             className="group relative px-5 py-2.5 rounded-full
-                       bg-mac-accent text-white text-[13px] font-medium
+                       bg-mac-accent text-[#1A1816] text-[13px] font-medium
                        hover:bg-mac-accent-hover active:bg-mac-accent-active
                        transition-all
-                       shadow-[0_1px_0_rgba(255,255,255,0.10)_inset,0_8px_24px_-8px_rgba(217,119,87,0.50)]"
+                       shadow-[0_1px_0_rgba(255,255,255,0.10)_inset,0_8px_24px_-8px_rgba(0,0,0,0.60)]"
           >
             <span className="flex items-center gap-2">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none">

@@ -18,7 +18,7 @@ export default function AuthPrompt() {
     <div className="flex items-center justify-center h-full px-6">
       <div className="w-full max-w-[300px] space-y-5 animate-fade-in">
         <div className="flex flex-col items-center gap-3">
-          <span className="claude-mark text-mac-accent w-8 h-8 animate-spark" aria-hidden />
+          <span className="gh-mark text-mac-accent w-8 h-8 animate-spark" aria-hidden />
           <div className="text-center space-y-1.5">
             <div className="text-[20px] font-display italic text-mac-label leading-none">
               Connect GitHub
@@ -50,7 +50,7 @@ export default function AuthPrompt() {
             type="submit"
             disabled={!token.trim() || isSubmitting}
             className="w-full py-2 text-[13px] font-medium rounded-lg
-                       bg-mac-accent text-white
+                       bg-mac-accent text-[#1A1816]
                        hover:bg-mac-accent-hover active:bg-mac-accent-active
                        disabled:opacity-40 disabled:hover:bg-mac-accent
                        transition-colors shadow-[0_1px_0_rgba(255,255,255,0.08)_inset]"

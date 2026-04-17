@@ -11,7 +11,7 @@ export default function TrayHeader() {
   return (
     <div className="flex items-center justify-between px-4 pt-4 pb-3">
       <div className="flex items-center gap-2.5">
-        <span className="claude-mark text-mac-accent w-[14px] h-[14px] animate-spark" aria-hidden />
+        <span className="gh-mark text-mac-accent w-[14px] h-[14px] animate-spark" aria-hidden />
         <div className="flex flex-col leading-tight">
           <span className="text-[13px] font-medium text-mac-label tracking-tight">
             Pull requests
