@@ -18,8 +18,8 @@ export default function PRItem({ pr }: PRItemProps) {
   return (
     <button
       onClick={handleClick}
-      className="w-full text-left px-3.5 py-2.5 hover:bg-mac-control-hover transition-colors
-                 cursor-pointer animate-fade-in"
+      className="w-full text-left px-3.5 py-2.5 border-b border-mac-separator hover:bg-mac-control-hover transition-colors
+                 cursor-pointer animate-fade-in focus:outline-none"
     >
       <div className="flex items-start gap-2.5">
         <img

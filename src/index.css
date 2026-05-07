@@ -32,7 +32,7 @@
 
   /* Elevated surfaces */
   --mac-bg-popover: rgba(34, 34, 34, 0.96);
-  --mac-bg-popover-translucent: rgba(20, 20, 22, 0.78);
+  --mac-bg-popover-translucent: rgba(14, 14, 16, 0.88);
   --mac-bg-menu: rgba(30, 30, 30, 0.92);
   --mac-bg-card: #212121;          /* stat cards / tiles */
   --mac-bg-card-soft: #262626;     /* tile-on-card */

@@ -21,7 +21,7 @@ export default function TrayHeader() {
       <button
         onClick={forceRefresh}
         disabled={isRefreshing}
-        className="w-[26px] h-[26px] flex items-center justify-center rounded-md text-mac-label-tertiary hover:text-mac-label hover:bg-mac-control-hover transition-colors disabled:opacity-30"
+        className="w-[26px] h-[26px] flex items-center justify-center rounded-md text-mac-label-tertiary hover:text-mac-label hover:bg-mac-control-hover transition-colors disabled:opacity-30 focus:outline-none"
         title="Refresh"
       >
         <svg
