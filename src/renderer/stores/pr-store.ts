@@ -16,7 +16,6 @@ interface PRStore {
   fetchPRs: () => Promise<void>;
   forceRefresh: () => Promise<void>;
   checkAuth: () => Promise<void>;
-  setToken: (token: string) => Promise<void>;
 }
 
 export const usePRStore = create<PRStore>((set) => ({
@@ -57,15 +56,6 @@ export const usePRStore = create<PRStore>((set) => ({
       set({ authStatus });
     } catch {
       set({ authStatus: { authenticated: false, username: null, source: null } });
-    }
-  },
-
-  setToken: async (token: string) => {
-    try {
-      const authStatus = await window.electronAPI.setToken(token);
-      set({ authStatus });
-    } catch {
-      set({ error: 'Failed to set token' });
     }
   },
 }));

@@ -31,13 +31,11 @@ describe('preload API wiring', () => {
 
     await api.getPRs();
     await api.forceRefresh();
-    await api.setToken('abc');
     await api.openExternal('https://example.com');
     await api.gitCheckoutBranch('/repo', 'feature');
 
     expect(invokeMock).toHaveBeenCalledWith(IPC.GITHUB_GET_PRS);
     expect(invokeMock).toHaveBeenCalledWith(IPC.GITHUB_FORCE_REFRESH);
-    expect(invokeMock).toHaveBeenCalledWith(IPC.GITHUB_SET_TOKEN, 'abc');
     expect(invokeMock).toHaveBeenCalledWith(IPC.APP_OPEN_EXTERNAL, 'https://example.com');
     expect(invokeMock).toHaveBeenCalledWith(IPC.GIT_CHECKOUT_BRANCH, '/repo', 'feature');
   });
