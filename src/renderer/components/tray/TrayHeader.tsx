@@ -1,39 +1,47 @@
 import React from 'react';
 import { usePRStore } from '../../stores/pr-store';
+import { getVisibleTrayPRs } from './pr-visibility';
 
 export default function TrayHeader() {
-  const { authStatus } = usePRStore();
-
-  const handleOpenGitManager = () => {
-    window.electronAPI.openFullWindow();
-  };
+  const { prs, isRefreshing, forceRefresh } = usePRStore();
+  const visibleCount = getVisibleTrayPRs(prs).length;
 
   return (
     <div className="flex items-center justify-between px-4 pt-4 pb-3">
       <div className="flex items-center gap-2.5">
         <span className="gh-mark text-mac-accent w-[14px] h-[14px] animate-spark" aria-hidden />
-        <div className="flex flex-col leading-tight">
-          <span className="text-[13px] font-medium text-mac-label tracking-tight">
-            Pull requests
-          </span>
-          {authStatus?.username && (
-            <span className="text-[10.5px] text-mac-label-tertiary font-mono">
-              @{authStatus.username}
-            </span>
-          )}
-        </div>
+        <span className="text-[13px] font-medium text-mac-label tracking-tight">
+          Pull requests
+        </span>
+        <span className="text-[11px] text-mac-label-tertiary font-mono tabular-nums">
+          {visibleCount}
+        </span>
       </div>
 
       <button
-        onClick={handleOpenGitManager}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-mac-label-tertiary hover:text-mac-label hover:bg-mac-control-hover transition-colors"
-        title="Open Git Manager"
+        onClick={forceRefresh}
+        disabled={isRefreshing}
+        className="w-7 h-7 flex items-center justify-center rounded-md text-mac-label-tertiary hover:text-mac-label hover:bg-mac-control-hover transition-colors disabled:opacity-30"
+        title="Refresh"
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          className={isRefreshing ? 'animate-spin' : ''}
+        >
           <path
-            d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"
+            d="M4 4v5h5M20 20v-5h-5"
             stroke="currentColor"
-            strokeWidth="1.6"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M20.49 9A9 9 0 0 0 5.64 5.64L4 7m16 10l-1.64-1.36A9 9 0 0 1 3.51 15"
+            stroke="currentColor"
+            strokeWidth="1.8"
             strokeLinecap="round"
             strokeLinejoin="round"
           />

@@ -32,6 +32,7 @@
 
   /* Elevated surfaces */
   --mac-bg-popover: rgba(34, 34, 34, 0.96);
+  --mac-bg-popover-translucent: rgba(20, 20, 22, 0.78);
   --mac-bg-menu: rgba(30, 30, 30, 0.92);
   --mac-bg-card: #212121;          /* stat cards / tiles */
   --mac-bg-card-soft: #262626;     /* tile-on-card */
@@ -98,6 +99,12 @@ body {
   background-image:
     radial-gradient(1200px 600px at 80% -10%, rgba(255, 255, 255, 0.035), transparent 60%),
     radial-gradient(900px 600px at -10% 110%, rgba(255, 255, 255, 0.02), transparent 60%);
+}
+
+.bg-mac-popover-translucent {
+  background-color: var(--mac-bg-popover-translucent);
+  backdrop-filter: blur(40px) saturate(140%);
+  -webkit-backdrop-filter: blur(40px) saturate(140%);
 }
 
 /* --- macOS-style input --- */

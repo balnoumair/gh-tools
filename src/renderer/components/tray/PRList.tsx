@@ -1,9 +1,11 @@
 import React from 'react';
 import { usePRStore } from '../../stores/pr-store';
 import PRItem from './PRItem';
+import { getVisibleTrayPRs } from './pr-visibility';
 
 export default function PRList() {
   const { prs, isRefreshing, error } = usePRStore();
+  const visiblePRs = getVisibleTrayPRs(prs);
 
   if (error) {
     return (
@@ -21,7 +23,7 @@ export default function PRList() {
     );
   }
 
-  if (isRefreshing && prs.length === 0) {
+  if (isRefreshing && visiblePRs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center gap-2 text-[12px] text-mac-label-tertiary">
@@ -32,7 +34,7 @@ export default function PRList() {
     );
   }
 
-  if (prs.length === 0) {
+  if (visiblePRs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full px-6">
         <div className="text-center space-y-2 animate-fade-in">
@@ -49,7 +51,7 @@ export default function PRList() {
 
   return (
     <div className="divide-y divide-mac-separator">
-      {prs.map((pr, i) => (
+      {visiblePRs.map((pr, i) => (
         <PRItem key={pr.id} pr={pr} index={i} />
       ))}
     </div>

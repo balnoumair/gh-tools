@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { usePRStore } from '../stores/pr-store';
 import TrayHeader from '../components/tray/TrayHeader';
 import PRList from '../components/tray/PRList';
-import TrayFooter from '../components/tray/TrayFooter';
 import AuthPrompt from '../components/tray/AuthPrompt';
 
 export default function TrayApp() {
@@ -21,14 +20,12 @@ export default function TrayApp() {
   const isAuthed = authStatus?.authenticated ?? false;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-mac-bg-sidebar">
+    <div className="h-full flex flex-col overflow-hidden bg-mac-popover-translucent rounded-[14px] border border-mac-separator-heavy">
       <TrayHeader />
 
       <div className="flex-1 overflow-y-auto min-h-0">
         {!isAuthed ? <AuthPrompt /> : <PRList />}
       </div>
-
-      <TrayFooter />
     </div>
   );
 }
