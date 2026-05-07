@@ -31,9 +31,9 @@ export function createPopoverWindow(): BrowserWindow {
     maximizable: false,
     fullscreenable: false,
     skipTaskbar: true,
-    transparent: true,
+    transparent: process.platform === 'darwin',
     backgroundColor: '#00000000',
-    vibrancy: 'menu',
+    vibrancy: process.platform === 'darwin' ? 'menu' : undefined,
     visualEffectState: 'active',
     hasShadow: true,
     webPreferences: {
