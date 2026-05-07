@@ -2,7 +2,7 @@ import { app, ipcMain, shell } from 'electron';
 import started from 'electron-squirrel-startup';
 import { createTray } from './main/tray';
 import { createPopoverWindow, createFullWindow, getPopoverWindow } from './main/windows';
-import { getToken, getAuthStatus, setManualToken } from './main/services/auth';
+import { getToken, getAuthStatus } from './main/services/auth';
 import {
   startPolling,
   stopPolling,
@@ -60,12 +60,6 @@ ipcMain.handle(IPC.GITHUB_FORCE_REFRESH, async () => {
 });
 
 ipcMain.handle(IPC.GITHUB_GET_AUTH_STATUS, async () => {
-  return getAuthStatus();
-});
-
-ipcMain.handle(IPC.GITHUB_SET_TOKEN, async (_event, token: string) => {
-  await setManualToken(token);
-  startPolling();
   return getAuthStatus();
 });
 

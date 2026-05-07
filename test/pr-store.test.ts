@@ -9,14 +9,8 @@ const makePR = (id: number): PullRequest => ({
   url: `https://github.com/org/repo/pull/${id}`,
   repoFullName: 'org/repo',
   author: { login: 'octocat', avatarUrl: '' },
-  isDraft: false,
-  reviewDecision: null,
   ciStatus: 'unknown',
-  createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
-  labels: [],
-  additions: 0,
-  deletions: 0,
   mentionType: 'mentioned',
 });
 
@@ -33,14 +27,13 @@ describe('usePRStore', () => {
     const baseAuth: AuthStatus = {
       authenticated: true,
       username: 'octocat',
-      source: 'manual',
+      source: 'gh-cli',
     };
 
     window.electronAPI = {
       getPRs: vi.fn().mockResolvedValue([]),
       forceRefresh: vi.fn().mockResolvedValue([]),
       getAuthStatus: vi.fn().mockResolvedValue(baseAuth),
-      setToken: vi.fn().mockResolvedValue(baseAuth),
     } as any;
   });
 
@@ -101,27 +94,5 @@ describe('usePRStore', () => {
 
     expect(usePRStore.getState().error).toBe('Failed to refresh');
     expect(usePRStore.getState().isRefreshing).toBe(false);
-  });
-
-  it('updates auth status when setToken succeeds', async () => {
-    const status: AuthStatus = {
-      authenticated: true,
-      username: 'updated-user',
-      source: 'manual',
-    };
-    vi.mocked(window.electronAPI.setToken).mockResolvedValueOnce(status);
-
-    await usePRStore.getState().setToken('abc123');
-
-    expect(window.electronAPI.setToken).toHaveBeenCalledWith('abc123');
-    expect(usePRStore.getState().authStatus).toEqual(status);
-  });
-
-  it('sets an error when setToken fails', async () => {
-    vi.mocked(window.electronAPI.setToken).mockRejectedValueOnce(new Error('bad token'));
-
-    await usePRStore.getState().setToken('bad-token');
-
-    expect(usePRStore.getState().error).toBe('Failed to set token');
   });
 });

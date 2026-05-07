@@ -50,7 +50,7 @@ export default function PRList() {
   }
 
   return (
-    <div className="divide-y divide-mac-separator">
+    <div>
       {visiblePRs.map((pr, i) => (
         <PRItem key={pr.id} pr={pr} index={i} />
       ))}

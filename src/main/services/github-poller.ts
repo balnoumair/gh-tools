@@ -1,15 +1,16 @@
-import { Octokit } from '@octokit/rest';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { getToken } from './auth';
 import { showPRNotification } from './notifications';
-import type { PullRequest, CIStatus, ReviewDecision } from '@shared/types';
+import type { PullRequest, CIStatus } from '@shared/types';
 
-let octokit: Octokit | null = null;
+const execFileAsync = promisify(execFile);
+
 let pollInterval: ReturnType<typeof setInterval> | null = null;
 let lastPRIds: Set<number> = new Set();
 let cachedPRs: PullRequest[] = [];
 let onPRsUpdated: ((prs: PullRequest[]) => void) | null = null;
 let pollIntervalMs = 10 * 60 * 1000; // 10 minutes default
-let etag: string | null = null;
 
 export function setOnPRsUpdated(callback: (prs: PullRequest[]) => void): void {
   onPRsUpdated = callback;
@@ -40,12 +41,8 @@ export async function refreshPRs(): Promise<PullRequest[]> {
   const token = await getToken();
   if (!token) return [];
 
-  if (!octokit) {
-    octokit = new Octokit({ auth: token });
-  }
-
   try {
-    const prs = await fetchUserPRs(octokit);
+    const prs = await fetchUserPRs();
     const newPRIds = new Set(prs.map((pr) => pr.id));
 
     // Detect new PRs for notifications
@@ -71,95 +68,125 @@ export function getCachedPRs(): PullRequest[] {
   return cachedPRs;
 }
 
-async function fetchUserPRs(kit: Octokit): Promise<PullRequest[]> {
-  // Fetch PRs where user is requested reviewer
-  const reviewRequested = await kit.rest.search.issuesAndPullRequests({
-    q: 'is:open is:pr review-requested:@me',
-    sort: 'updated',
-    order: 'desc',
-    per_page: 50,
-    ...(etag ? { headers: { 'If-None-Match': etag } } : {}),
-  });
-
-  if (reviewRequested.headers.etag) {
-    etag = reviewRequested.headers.etag;
+const PR_QUERY = `
+query {
+  reviewRequested: search(query: "is:open is:pr review-requested:@me", type: ISSUE, first: 50) {
+    nodes { ... on PullRequest { ...prFields } }
   }
+  mentioned: search(query: "is:open is:pr mentions:@me", type: ISSUE, first: 30) {
+    nodes { ... on PullRequest { ...prFields } }
+  }
+  assigned: search(query: "is:open is:pr assignee:@me", type: ISSUE, first: 30) {
+    nodes { ... on PullRequest { ...prFields } }
+  }
+  authored: search(query: "is:open is:pr author:@me", type: ISSUE, first: 50) {
+    nodes { ... on PullRequest { ...prFields } }
+  }
+}
 
-  // Fetch PRs where user is mentioned
-  const mentioned = await kit.rest.search.issuesAndPullRequests({
-    q: 'is:open is:pr mentions:@me',
-    sort: 'updated',
-    order: 'desc',
-    per_page: 30,
-  });
+fragment prFields on PullRequest {
+  databaseId
+  number
+  title
+  url
+  updatedAt
+  author { login avatarUrl }
+  repository { nameWithOwner }
+  commits(last: 1) {
+    nodes {
+      commit {
+        statusCheckRollup { state }
+      }
+    }
+  }
+}
+`.trim();
 
-  // Fetch PRs where user is assigned
-  const assigned = await kit.rest.search.issuesAndPullRequests({
-    q: 'is:open is:pr assignee:@me',
-    sort: 'updated',
-    order: 'desc',
-    per_page: 30,
-  });
+interface GqlPR {
+  databaseId: number;
+  number: number;
+  title: string;
+  url: string;
+  updatedAt: string;
+  author: { login: string; avatarUrl?: string } | null;
+  repository: { nameWithOwner: string };
+  commits: {
+    nodes: Array<{
+      commit: { statusCheckRollup: { state: string } | null };
+    }>;
+  };
+}
 
-  // Fetch PRs authored by the user
-  const authored = await kit.rest.search.issuesAndPullRequests({
-    q: 'is:open is:pr author:@me',
-    sort: 'updated',
-    order: 'desc',
-    per_page: 50,
-  });
+interface GqlResponse {
+  data?: {
+    reviewRequested: { nodes: GqlPR[] };
+    mentioned: { nodes: GqlPR[] };
+    assigned: { nodes: GqlPR[] };
+    authored: { nodes: GqlPR[] };
+  };
+  errors?: Array<{ message: string }>;
+}
 
-  // Deduplicate and merge
+function mapCiStatus(state: string | null | undefined): CIStatus {
+  switch (state) {
+    case 'SUCCESS':
+      return 'success';
+    case 'FAILURE':
+    case 'ERROR':
+      return 'failure';
+    case 'PENDING':
+    case 'EXPECTED':
+      return 'pending';
+    default:
+      return 'unknown';
+  }
+}
+
+function toPullRequest(node: GqlPR, mentionType: PullRequest['mentionType']): PullRequest {
+  const rollupState = node.commits.nodes[0]?.commit.statusCheckRollup?.state;
+  return {
+    id: node.databaseId,
+    number: node.number,
+    title: node.title,
+    url: node.url,
+    repoFullName: node.repository.nameWithOwner,
+    author: {
+      login: node.author?.login ?? 'unknown',
+      avatarUrl: node.author?.avatarUrl ?? '',
+    },
+    ciStatus: mapCiStatus(rollupState),
+    updatedAt: node.updatedAt,
+    mentionType,
+  };
+}
+
+async function fetchUserPRs(): Promise<PullRequest[]> {
+  const { stdout } = await execFileAsync(
+    'gh',
+    ['api', 'graphql', '-f', `query=${PR_QUERY}`],
+    { maxBuffer: 10 * 1024 * 1024, timeout: 30_000 }
+  );
+
+  const parsed = JSON.parse(stdout) as GqlResponse;
+  if (parsed.errors?.length) {
+    throw new Error(`gh graphql errors: ${parsed.errors.map((e) => e.message).join('; ')}`);
+  }
+  if (!parsed.data) throw new Error('gh graphql returned no data');
+
   const prMap = new Map<number, PullRequest>();
-
-  const mapItems = (
-    items: typeof reviewRequested.data.items,
-    mentionType: PullRequest['mentionType']
-  ) => {
-    for (const item of items) {
-      if (prMap.has(item.id)) continue;
-
-      const repoUrl = item.repository_url || '';
-      const repoFullName = repoUrl.replace('https://api.github.com/repos/', '');
-
-      prMap.set(item.id, {
-        id: item.id,
-        number: item.number,
-        title: item.title,
-        url: item.html_url || item.url,
-        repoFullName,
-        author: {
-          login: item.user?.login || 'unknown',
-          avatarUrl: item.user?.avatar_url || '',
-        },
-        isDraft: (item as any).draft || false,
-        reviewDecision: null, // Search API doesn't return this
-        ciStatus: 'unknown' as CIStatus,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-        labels: (item.labels || [])
-          .filter((l): l is { name: string; color: string } =>
-            typeof l === 'object' && l !== null && 'name' in l
-          )
-          .map((l) => ({ name: l.name, color: l.color || '888888' })),
-        additions: 0,
-        deletions: 0,
-        mentionType,
-      });
+  const ingest = (nodes: GqlPR[], mentionType: PullRequest['mentionType']) => {
+    for (const node of nodes) {
+      if (!node || prMap.has(node.databaseId)) continue;
+      prMap.set(node.databaseId, toPullRequest(node, mentionType));
     }
   };
 
-  mapItems(reviewRequested.data.items, 'review_requested');
-  mapItems(mentioned.data.items, 'mentioned');
-  mapItems(assigned.data.items, 'assigned');
-  mapItems(authored.data.items, 'authored');
+  ingest(parsed.data.reviewRequested.nodes, 'review_requested');
+  ingest(parsed.data.mentioned.nodes, 'mentioned');
+  ingest(parsed.data.assigned.nodes, 'assigned');
+  ingest(parsed.data.authored.nodes, 'authored');
 
   return Array.from(prMap.values()).sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
-}
-
-export function resetOctokit(): void {
-  octokit = null;
-  etag = null;
 }

@@ -21,8 +21,6 @@ const api = {
     ipcRenderer.invoke(IPC.GITHUB_FORCE_REFRESH),
   getAuthStatus: (): Promise<AuthStatus> =>
     ipcRenderer.invoke(IPC.GITHUB_GET_AUTH_STATUS),
-  setToken: (token: string): Promise<AuthStatus> =>
-    ipcRenderer.invoke(IPC.GITHUB_SET_TOKEN, token),
   setPollInterval: (minutes: number): Promise<void> =>
     ipcRenderer.invoke(IPC.GITHUB_SET_POLL_INTERVAL, minutes),
 

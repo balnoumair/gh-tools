@@ -4,10 +4,19 @@ import type { PullRequest } from '@shared/types';
 // Keep references to prevent GC (known Electron macOS issue)
 const notificationRefs = new Map<number, Notification>();
 
+const TITLE_BY_MENTION: Record<PullRequest['mentionType'], string> = {
+  review_requested: 'Review requested',
+  mentioned: 'You were mentioned',
+  assigned: 'Assigned to you',
+  authored: 'Pull request opened',
+};
+
 export function showPRNotification(pr: PullRequest): void {
+  const repoName = pr.repoFullName.split('/')[1] ?? pr.repoFullName;
   const notification = new Notification({
-    title: `PR #${pr.number} — ${pr.repoFullName}`,
-    body: `${pr.author.login}: ${pr.title}`,
+    title: TITLE_BY_MENTION[pr.mentionType],
+    subtitle: `${repoName} · #${pr.number}`,
+    body: `${pr.author.login} · ${pr.title}`,
     silent: false,
   });
 

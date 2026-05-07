@@ -7,10 +7,10 @@ export default function TrayHeader() {
   const visibleCount = getVisibleTrayPRs(prs).length;
 
   return (
-    <div className="flex items-center justify-between px-4 pt-4 pb-3">
+    <div className="flex items-center justify-between px-3.5 py-3 border-b border-mac-separator">
       <div className="flex items-center gap-2.5">
-        <span className="gh-mark text-mac-accent w-[14px] h-[14px] animate-spark" aria-hidden />
-        <span className="text-[13px] font-medium text-mac-label tracking-tight">
+        <span className="gh-mark text-mac-label-secondary w-[14px] h-[14px]" aria-hidden />
+        <span className="text-[13px] font-semibold text-mac-label tracking-tight">
           Pull requests
         </span>
         <span className="text-[11px] text-mac-label-tertiary font-mono tabular-nums">
@@ -21,7 +21,7 @@ export default function TrayHeader() {
       <button
         onClick={forceRefresh}
         disabled={isRefreshing}
-        className="w-7 h-7 flex items-center justify-center rounded-md text-mac-label-tertiary hover:text-mac-label hover:bg-mac-control-hover transition-colors disabled:opacity-30"
+        className="w-[26px] h-[26px] flex items-center justify-center rounded-md text-mac-label-tertiary hover:text-mac-label hover:bg-mac-control-hover transition-colors disabled:opacity-30 focus:outline-none"
         title="Refresh"
       >
         <svg
