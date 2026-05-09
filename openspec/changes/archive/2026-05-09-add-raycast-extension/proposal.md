@@ -11,7 +11,7 @@ This is the lowest-priority change of the three: it depends on the Git capabilit
   - **Repo Workspace** — a repo-scoped view (mirrors the Electron tiny-app sections): branches and worktrees with per-row actions (Commit / Push / Pull / Merge main → branch / Open in Cursor / Claude Code / Codex / Zed / Terminal / Finder / Remove worktree).
 - Each command's action panel (⌘K) SHALL group actions into "Open in" and "Git" sections matching the design.
 - Recents and per-repo state SHALL be persisted via Raycast's `LocalStorage` API; no IPC into the Electron app is required.
-- Git operations SHALL be implemented by shelling out to `git` from the extension (Raycast extensions are Node.js with full child_process access). Editor launchers SHALL match the Electron app's resolution rules (PATH-based, with a clear error on missing CLIs).
+- Git operations SHALL be implemented by shelling out to `git` from the extension (Raycast extensions are Node.js with full child_process access). Editor launchers SHALL use a per-target mechanism (PATH-based GUI shims for Cursor/Zed, `codex app <path>` for Codex Desktop, the `claude://code/new?folder=…` URL scheme for Claude Code, `open` for Terminal/Finder), with a clear failure toast when the target cannot be launched. See `design.md` for the full launch rules.
 - The extension SHALL NOT depend on the Electron app being installed or running.
 
 ## Capabilities
