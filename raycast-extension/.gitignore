@@ -1,0 +1,10 @@
+# Raycast
+node_modules
+.ray
+dist
+build
+.DS_Store
+
+# Editor
+.idea
+.vscode
