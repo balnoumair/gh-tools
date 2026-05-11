@@ -3,9 +3,7 @@
 ## Purpose
 
 Define the Electron shell, window modes, tray behavior, and renderer IPC boundary for gh-viewer. The application is a macOS-oriented menu bar app that opens a compact pull request popover by default and a larger Git Manager window on demand.
-
 ## Requirements
-
 ### Requirement: Menu bar app lifecycle
 
 The system SHALL run as a tray/menu bar application and SHALL remain alive when windows are closed.
@@ -46,14 +44,28 @@ The system SHALL show a frameless, fixed-size tray popover when the tray icon is
 
 ### Requirement: Full Git Manager window
 
-The system SHALL provide a larger full window for repository management.
+The system SHALL provide a Git Manager window sized for the tiny-app layout.
 
 #### Scenario: Full window is requested
 
 - **WHEN** the renderer invokes the open-full-window command
-- **THEN** the app SHALL create a full Git Manager window if one does not exist
-- **AND** SHALL show and focus the existing full window if it already exists
+- **THEN** the app SHALL create a Git Manager window if one does not exist
+- **AND** SHALL show and focus the existing Git Manager window if it already exists
 - **AND** SHALL load the renderer in `full` mode
+
+#### Scenario: Full window sizing
+
+- **WHEN** the Git Manager window is created
+- **THEN** its content size SHALL be 380×680 by default
+- **AND** its minimum width SHALL be 380 and its minimum height SHALL be 480
+- **AND** it SHALL be resizable in height but its width SHALL be locked to 380
+
+#### Scenario: Repo picker / launcher window
+
+- **WHEN** no active repository is selected
+- **THEN** the renderer SHALL display a Raycast-style command-bar launcher (search input + recents list)
+- **AND** the Git Manager window SHALL widen to 920 × 580 while in launcher mode
+- **AND** the window SHALL return to the 380×680 tiny-app size after a repository becomes active
 
 ### Requirement: Mode-specific renderer boot
 
@@ -94,3 +106,4 @@ The system SHALL open external GitHub or web URLs through the Electron shell.
 
 - **WHEN** the renderer invokes the open-external command with a URL
 - **THEN** the main process SHALL pass the URL to Electron shell external opening
+

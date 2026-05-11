@@ -1,7 +1,7 @@
 import { app, ipcMain, shell } from 'electron';
 import started from 'electron-squirrel-startup';
 import { createTray } from './main/tray';
-import { createPopoverWindow, createFullWindow, getPopoverWindow } from './main/windows';
+import { createPopoverWindow, createFullWindow, getPopoverWindow, setFullWindowSize } from './main/windows';
 import { getToken, getAuthStatus } from './main/services/auth';
 import {
   startPolling,
@@ -12,8 +12,19 @@ import {
   setPollInterval,
 } from './main/services/github-poller';
 import * as gitService from './main/services/git-service';
+import { loadShellPath, openInEditor } from './main/services/editor-launcher';
 import { IPC } from '@shared/ipc-channels';
-import type { MergeOptions, PushOptions, UpdateOptions, StashCreateOptions, StashApplyOptions } from '@shared/types';
+import type {
+  EditorTarget,
+  MergeOptions,
+  PushOptions,
+  UpdateOptions,
+  StashCreateOptions,
+  StashApplyOptions,
+  WorktreeCreateOptions,
+  WorktreeRemoveOptions,
+  WorktreeCommitOptions,
+} from '@shared/types';
 
 if (started) {
   app.quit();
@@ -25,6 +36,8 @@ if (process.platform === 'darwin') {
 }
 
 app.on('ready', async () => {
+  await loadShellPath();
+
   // Create popover window first, then tray
   createPopoverWindow();
   createTray(() => getPopoverWindow());
@@ -75,6 +88,10 @@ ipcMain.handle(IPC.APP_OPEN_EXTERNAL, async (_event, url: string) => {
   shell.openExternal(url);
 });
 
+ipcMain.handle(IPC.APP_SET_WINDOW_SIZE, async (_event, width: number, height: number) => {
+  setFullWindowSize(width, height);
+});
+
 // --- Git IPC Handlers ---
 
 ipcMain.handle(IPC.GIT_SELECT_REPO, async () => {
@@ -83,6 +100,22 @@ ipcMain.handle(IPC.GIT_SELECT_REPO, async () => {
 
 ipcMain.handle(IPC.GIT_GET_REPO_STATUS, async (_e, repoPath: string) => {
   return gitService.getRepoStatus(repoPath);
+});
+
+ipcMain.handle(IPC.GIT_LIST_WORKTREES, async (_e, repoPath: string) => {
+  return gitService.listWorktrees(repoPath);
+});
+
+ipcMain.handle(IPC.GIT_CREATE_WORKTREE, async (_e, opts: WorktreeCreateOptions) => {
+  return gitService.createWorktree(opts);
+});
+
+ipcMain.handle(IPC.GIT_REMOVE_WORKTREE, async (_e, opts: WorktreeRemoveOptions) => {
+  return gitService.removeWorktree(opts);
+});
+
+ipcMain.handle(IPC.GIT_COMMIT_WORKTREE, async (_e, opts: WorktreeCommitOptions) => {
+  return gitService.commitWorktree(opts);
 });
 
 ipcMain.handle(IPC.GIT_CHECKOUT_BRANCH, async (_e, repoPath: string, branch: string) => {
@@ -123,6 +156,10 @@ ipcMain.handle(IPC.GIT_STASH_APPLY, async (_e, opts: StashApplyOptions) => {
 
 ipcMain.handle(IPC.GIT_STASH_DROP, async (_e, repoPath: string, stashIndex: number) => {
   return gitService.stashDrop(repoPath, stashIndex);
+});
+
+ipcMain.handle(IPC.EDITOR_OPEN, async (_e, target: EditorTarget, targetPath: string) => {
+  return openInEditor(target, targetPath);
 });
 
 app.on('before-quit', () => {

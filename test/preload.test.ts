@@ -32,11 +32,21 @@ describe('preload API wiring', () => {
     await api.getPRs();
     await api.forceRefresh();
     await api.openExternal('https://example.com');
+    await api.setWindowSize(380, 680);
+    await api.gitListWorktrees('/repo');
+    await api.gitCreateWorktree({ repoPath: '/repo', branch: 'feature', targetPath: '/repo-feature' });
+    await api.gitRemoveWorktree({ repoPath: '/repo', worktreePath: '/repo-feature' });
+    await api.openInEditor('cursor', '/repo');
     await api.gitCheckoutBranch('/repo', 'feature');
 
     expect(invokeMock).toHaveBeenCalledWith(IPC.GITHUB_GET_PRS);
     expect(invokeMock).toHaveBeenCalledWith(IPC.GITHUB_FORCE_REFRESH);
     expect(invokeMock).toHaveBeenCalledWith(IPC.APP_OPEN_EXTERNAL, 'https://example.com');
+    expect(invokeMock).toHaveBeenCalledWith(IPC.APP_SET_WINDOW_SIZE, 380, 680);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.GIT_LIST_WORKTREES, '/repo');
+    expect(invokeMock).toHaveBeenCalledWith(IPC.GIT_CREATE_WORKTREE, { repoPath: '/repo', branch: 'feature', targetPath: '/repo-feature' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.GIT_REMOVE_WORKTREE, { repoPath: '/repo', worktreePath: '/repo-feature' });
+    expect(invokeMock).toHaveBeenCalledWith(IPC.EDITOR_OPEN, 'cursor', '/repo');
     expect(invokeMock).toHaveBeenCalledWith(IPC.GIT_CHECKOUT_BRANCH, '/repo', 'feature');
   });
 

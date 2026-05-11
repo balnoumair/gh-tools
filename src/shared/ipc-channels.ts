@@ -9,10 +9,15 @@ export const IPC = {
   // App
   APP_OPEN_FULL_WINDOW: 'app:open-full-window',
   APP_OPEN_EXTERNAL: 'app:open-external',
+  APP_SET_WINDOW_SIZE: 'app:set-window-size',
 
   // Git management
   GIT_SELECT_REPO: 'git:select-repo',
   GIT_GET_REPO_STATUS: 'git:get-repo-status',
+  GIT_LIST_WORKTREES: 'git:list-worktrees',
+  GIT_CREATE_WORKTREE: 'git:create-worktree',
+  GIT_REMOVE_WORKTREE: 'git:remove-worktree',
+  GIT_COMMIT_WORKTREE: 'git:commit-worktree',
   GIT_CHECKOUT_BRANCH: 'git:checkout-branch',
   GIT_CREATE_BRANCH: 'git:create-branch',
   GIT_DELETE_BRANCH: 'git:delete-branch',
@@ -23,4 +28,7 @@ export const IPC = {
   GIT_STASH_CREATE: 'git:stash-create',
   GIT_STASH_APPLY: 'git:stash-apply',
   GIT_STASH_DROP: 'git:stash-drop',
+
+  // Editor launchers
+  EDITOR_OPEN: 'editor:open',
 } as const;
