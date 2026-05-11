@@ -5,12 +5,18 @@ import type {
   AuthStatus,
   GitRepo,
   GitRepoStatus,
+  GitWorktree,
   GitOperationResult,
+  EditorTarget,
+  EditorLaunchResult,
   MergeOptions,
   PushOptions,
   UpdateOptions,
   StashCreateOptions,
   StashApplyOptions,
+  WorktreeCreateOptions,
+  WorktreeRemoveOptions,
+  WorktreeCommitOptions,
 } from '@shared/types';
 
 const api = {
@@ -37,12 +43,22 @@ const api = {
     ipcRenderer.invoke(IPC.APP_OPEN_FULL_WINDOW),
   openExternal: (url: string): Promise<void> =>
     ipcRenderer.invoke(IPC.APP_OPEN_EXTERNAL, url),
+  setWindowSize: (width: number, height: number): Promise<void> =>
+    ipcRenderer.invoke(IPC.APP_SET_WINDOW_SIZE, width, height),
 
   // Git management
   gitSelectRepo: (): Promise<GitRepo | null> =>
     ipcRenderer.invoke(IPC.GIT_SELECT_REPO),
   gitGetRepoStatus: (repoPath: string): Promise<GitRepoStatus> =>
     ipcRenderer.invoke(IPC.GIT_GET_REPO_STATUS, repoPath),
+  gitListWorktrees: (repoPath: string): Promise<GitWorktree[]> =>
+    ipcRenderer.invoke(IPC.GIT_LIST_WORKTREES, repoPath),
+  gitCreateWorktree: (opts: WorktreeCreateOptions): Promise<GitOperationResult> =>
+    ipcRenderer.invoke(IPC.GIT_CREATE_WORKTREE, opts),
+  gitRemoveWorktree: (opts: WorktreeRemoveOptions): Promise<GitOperationResult> =>
+    ipcRenderer.invoke(IPC.GIT_REMOVE_WORKTREE, opts),
+  gitCommitWorktree: (opts: WorktreeCommitOptions): Promise<GitOperationResult> =>
+    ipcRenderer.invoke(IPC.GIT_COMMIT_WORKTREE, opts),
   gitCheckoutBranch: (repoPath: string, branch: string): Promise<GitOperationResult> =>
     ipcRenderer.invoke(IPC.GIT_CHECKOUT_BRANCH, repoPath, branch),
   gitCreateBranch: (repoPath: string, name: string, startPoint?: string): Promise<GitOperationResult> =>
@@ -63,6 +79,10 @@ const api = {
     ipcRenderer.invoke(IPC.GIT_STASH_APPLY, opts),
   gitStashDrop: (repoPath: string, stashIndex: number): Promise<GitOperationResult> =>
     ipcRenderer.invoke(IPC.GIT_STASH_DROP, repoPath, stashIndex),
+
+  // Editor launchers
+  openInEditor: (target: EditorTarget, path: string): Promise<EditorLaunchResult> =>
+    ipcRenderer.invoke(IPC.EDITOR_OPEN, target, path),
 };
 
 export type ElectronAPI = typeof api;

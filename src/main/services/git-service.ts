@@ -7,12 +7,16 @@ import type {
   GitRepoStatus,
   GitBranch,
   GitStashEntry,
+  GitWorktree,
   GitOperationResult,
   MergeOptions,
   PushOptions,
   UpdateOptions,
   StashCreateOptions,
   StashApplyOptions,
+  WorktreeCreateOptions,
+  WorktreeRemoveOptions,
+  WorktreeCommitOptions,
 } from '@shared/types';
 
 function getGit(repoPath: string): SimpleGit {
@@ -26,6 +30,80 @@ function result(
   output = '',
 ): GitOperationResult {
   return { success, message, output, duration: Date.now() - start };
+}
+
+function normalizePath(value: string): string {
+  return path.resolve(value);
+}
+
+function isPrimaryWorktree(worktreePath: string, repoPath: string): boolean {
+  if (normalizePath(worktreePath) === normalizePath(repoPath)) return true;
+
+  try {
+    return fs.statSync(path.join(worktreePath, '.git')).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function parseWorktreeList(output: string, repoPath: string): GitWorktree[] {
+  const records = output
+    .split(/\n\s*\n/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  return records.map((record) => {
+    const lines = record.split('\n');
+    const pathLine = lines.find((line) => line.startsWith('worktree '));
+    const branchLine = lines.find((line) => line.startsWith('branch '));
+    const headLine = lines.find((line) => line.startsWith('HEAD '));
+    const worktreePath = pathLine?.replace(/^worktree /, '') ?? repoPath;
+    const head = headLine?.replace(/^HEAD /, '').slice(0, 8) ?? 'unknown';
+    const branch = branchLine
+      ? branchLine.replace(/^branch refs\/heads\//, '').replace(/^branch /, '')
+      : `(detached) ${head}`;
+
+    return {
+      path: worktreePath,
+      branch,
+      primary: isPrimaryWorktree(worktreePath, repoPath),
+      dirty: false,
+      ahead: 0,
+      behind: 0,
+    };
+  });
+}
+
+async function getAheadBehind(worktreePath: string, branch: string): Promise<{ ahead: number; behind: number }> {
+  if (branch.startsWith('(detached) ')) return { ahead: 0, behind: 0 };
+
+  const git = getGit(worktreePath);
+
+  try {
+    const upstream = (await git.raw([
+      'rev-parse',
+      '--abbrev-ref',
+      '--symbolic-full-name',
+      '@{u}',
+    ])).trim();
+
+    if (!upstream) return { ahead: 0, behind: 0 };
+
+    const counts = (await git.raw([
+      'rev-list',
+      '--left-right',
+      '--count',
+      `${branch}...${upstream}`,
+    ])).trim();
+    const [aheadRaw, behindRaw] = counts.split(/\s+/);
+
+    return {
+      ahead: Number.parseInt(aheadRaw ?? '0', 10) || 0,
+      behind: Number.parseInt(behindRaw ?? '0', 10) || 0,
+    };
+  } catch {
+    return { ahead: 0, behind: 0 };
+  }
 }
 
 // --- Repo selection ---
@@ -56,10 +134,11 @@ export async function selectRepo(): Promise<GitRepo | null> {
 export async function getRepoStatus(repoPath: string): Promise<GitRepoStatus> {
   const git = getGit(repoPath);
 
-  const [branchSummary, status, stashList] = await Promise.all([
+  const [branchSummary, status, stashList, worktrees] = await Promise.all([
     git.branch(['-a', '-v', '--no-abbrev']),
     git.status(),
     git.stashList(),
+    listWorktrees(repoPath),
   ]);
 
   const branches: GitBranch[] = [];
@@ -94,12 +173,107 @@ export async function getRepoStatus(repoPath: string): Promise<GitRepoStatus> {
     currentBranch: branchSummary.current,
     branches,
     stashes,
+    worktrees,
     hasUncommittedChanges: !status.isClean(),
     untrackedCount: status.not_added.length,
     stagedCount: status.staged.length,
     modifiedCount: status.modified.length,
     conflictCount: status.conflicted.length,
   };
+}
+
+// --- Worktrees ---
+
+export async function listWorktrees(repoPath: string): Promise<GitWorktree[]> {
+  const git = getGit(repoPath);
+  const output = await git.raw(['worktree', 'list', '--porcelain']);
+  const worktrees = parseWorktreeList(output, repoPath);
+
+  return Promise.all(
+    worktrees.map(async (worktree) => {
+      const worktreeGit = getGit(worktree.path);
+      const [statusOutput, counts] = await Promise.all([
+        worktreeGit.raw(['status', '--porcelain']).catch(() => ''),
+        getAheadBehind(worktree.path, worktree.branch),
+      ]);
+
+      return {
+        ...worktree,
+        dirty: statusOutput.trim().length > 0,
+        ahead: counts.ahead,
+        behind: counts.behind,
+      };
+    }),
+  );
+}
+
+export async function createWorktree(opts: WorktreeCreateOptions): Promise<GitOperationResult> {
+  const start = Date.now();
+  const targetPath = normalizePath(opts.targetPath);
+
+  try {
+    if (fs.existsSync(targetPath)) {
+      return result(start, false, `Worktree target already exists: ${targetPath}`);
+    }
+
+    const git = getGit(opts.repoPath);
+    const output = await git.raw(['worktree', 'add', targetPath, opts.branch]);
+    return result(start, true, `Created worktree at ${targetPath}`, output);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return result(start, false, `Create worktree failed: ${msg}`, msg);
+  }
+}
+
+export async function removeWorktree(opts: WorktreeRemoveOptions): Promise<GitOperationResult> {
+  const start = Date.now();
+  const worktreePath = normalizePath(opts.worktreePath);
+
+  try {
+    const worktrees = await listWorktrees(opts.repoPath);
+    const target = worktrees.find((worktree) => normalizePath(worktree.path) === worktreePath);
+
+    if (target?.primary || normalizePath(opts.repoPath) === worktreePath) {
+      return result(start, false, 'The primary worktree cannot be removed');
+    }
+
+    const args = ['worktree', 'remove'];
+    if (opts.force) args.push('--force');
+    args.push(worktreePath);
+
+    const git = getGit(opts.repoPath);
+    const output = await git.raw(args);
+    return result(start, true, `Removed worktree at ${worktreePath}`, output);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return result(start, false, `Remove worktree failed: ${msg}`, msg);
+  }
+}
+
+export async function commitWorktree(opts: WorktreeCommitOptions): Promise<GitOperationResult> {
+  const start = Date.now();
+
+  try {
+    const git = getGit(opts.worktreePath);
+    await git.add(['-A']);
+    const commit = await git.commit(opts.message);
+    let output = JSON.stringify(commit.summary, null, 2);
+
+    if (opts.alsoPush) {
+      const pushResult = await git.push();
+      output = `${output}\n${JSON.stringify(pushResult, null, 2)}`;
+    }
+
+    return result(
+      start,
+      true,
+      opts.alsoPush ? 'Committed and pushed worktree changes' : 'Committed worktree changes',
+      output,
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return result(start, false, `Commit failed: ${msg}`, msg);
+  }
 }
 
 // --- Branch operations ---

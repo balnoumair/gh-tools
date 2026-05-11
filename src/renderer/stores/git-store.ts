@@ -1,16 +1,23 @@
 import { create } from 'zustand';
 import type {
+  EditorTarget,
+  GitOperationResult,
   GitRepo,
   GitRepoStatus,
-  GitOperationResult,
   MergeOptions,
   PushOptions,
-  UpdateOptions,
-  StashCreateOptions,
   StashApplyOptions,
+  StashCreateOptions,
+  UpdateOptions,
 } from '@shared/types';
 
 type OperationStatus = 'idle' | 'running' | 'success' | 'error';
+type ToastKind = 'success' | 'error' | 'info';
+
+interface TransientToast {
+  message: string;
+  kind: ToastKind;
+}
 
 interface GitStore {
   activeRepo: GitRepo | null;
@@ -19,7 +26,7 @@ interface GitStore {
   isLoadingStatus: boolean;
   operationStatus: OperationStatus;
   lastResult: GitOperationResult | null;
-  outputLog: string[];
+  transientToast: TransientToast | null;
   error: string | null;
 
   showMergeDialog: boolean;
@@ -30,6 +37,7 @@ interface GitStore {
 
   selectRepo: () => Promise<void>;
   openRepo: (repo: GitRepo) => Promise<void>;
+  closeRepo: () => Promise<void>;
   refreshStatus: () => Promise<void>;
   checkoutBranch: (branch: string) => Promise<void>;
   createBranch: (name: string, startPoint?: string) => Promise<void>;
@@ -41,16 +49,22 @@ interface GitStore {
   stashCreate: (opts: Omit<StashCreateOptions, 'repoPath'>) => Promise<void>;
   stashApply: (opts: Omit<StashApplyOptions, 'repoPath'>) => Promise<void>;
   stashDrop: (stashIndex: number) => Promise<void>;
+  createWorktree: (branch: string, targetPath: string) => Promise<void>;
+  removeWorktree: (worktreePath: string, force?: boolean) => Promise<void>;
+  commitInWorktree: (worktreePath: string, message: string, alsoPush?: boolean) => Promise<void>;
+  syncWorktree: (worktreePath: string, branch: string) => Promise<void>;
+  openInEditor: (target: EditorTarget, path: string) => Promise<void>;
+  showToast: (message: string, kind?: ToastKind) => void;
 
   setShowMergeDialog: (v: boolean) => void;
   setShowPushDialog: (v: boolean) => void;
   setShowUpdateDialog: (v: boolean) => void;
   setShowStashCreateDialog: (v: boolean) => void;
   setShowCreateBranchDialog: (v: boolean) => void;
-
-  appendOutput: (line: string) => void;
-  clearOutput: () => void;
 }
+
+let toastTimer: number | undefined;
+type GitStoreSetter = (partial: Partial<GitStore> | ((state: GitStore) => Partial<GitStore>)) => void;
 
 function loadRecentRepos(): GitRepo[] {
   try {
@@ -72,6 +86,13 @@ function addToRecent(repo: GitRepo, current: GitRepo[]): GitRepo[] {
   return updated;
 }
 
+function setOperationResult(
+  set: GitStoreSetter,
+  res: GitOperationResult,
+) {
+  set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+}
+
 export const useGitStore = create<GitStore>((set, get) => ({
   activeRepo: null,
   recentRepos: loadRecentRepos(),
@@ -79,7 +100,7 @@ export const useGitStore = create<GitStore>((set, get) => ({
   isLoadingStatus: false,
   operationStatus: 'idle',
   lastResult: null,
-  outputLog: [],
+  transientToast: null,
   error: null,
 
   showMergeDialog: false,
@@ -98,6 +119,7 @@ export const useGitStore = create<GitStore>((set, get) => ({
           repoStatus: null,
           error: null,
         });
+        await window.electronAPI.setWindowSize(380, 680);
         await get().refreshStatus();
       }
     } catch {
@@ -112,7 +134,13 @@ export const useGitStore = create<GitStore>((set, get) => ({
       repoStatus: null,
       error: null,
     });
+    await window.electronAPI.setWindowSize(380, 680);
     await get().refreshStatus();
+  },
+
+  closeRepo: async () => {
+    set({ activeRepo: null, repoStatus: null, error: null });
+    await window.electronAPI.setWindowSize(920, 580);
   },
 
   refreshStatus: async () => {
@@ -132,8 +160,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running' });
     const res = await window.electronAPI.gitCheckoutBranch(activeRepo.path, branch);
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -142,12 +170,12 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running' });
     const res = await window.electronAPI.gitCreateBranch(activeRepo.path, name, startPoint);
-    get().appendOutput(res.message);
     set({
       operationStatus: res.success ? 'success' : 'error',
       lastResult: res,
       showCreateBranchDialog: false,
     });
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -156,8 +184,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running' });
     const res = await window.electronAPI.gitDeleteBranch(activeRepo.path, branch, force);
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -166,9 +194,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running', showMergeDialog: false });
     const res = await window.electronAPI.gitMerge({ ...opts, repoPath: activeRepo.path });
-    get().appendOutput(res.message);
-    if (res.output) get().appendOutput(res.output);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     await get().refreshStatus();
   },
 
@@ -177,8 +204,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running', showPushDialog: false });
     const res = await window.electronAPI.gitPush({ ...opts, repoPath: activeRepo.path });
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -187,8 +214,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running' });
     const res = await window.electronAPI.gitFetch(activeRepo.path, remote);
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -197,8 +224,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running', showUpdateDialog: false });
     const res = await window.electronAPI.gitPull({ ...opts, repoPath: activeRepo.path });
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -207,8 +234,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running', showStashCreateDialog: false });
     const res = await window.electronAPI.gitStashCreate({ ...opts, repoPath: activeRepo.path });
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -217,8 +244,8 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running' });
     const res = await window.electronAPI.gitStashApply({ ...opts, repoPath: activeRepo.path });
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
   },
 
@@ -227,9 +254,72 @@ export const useGitStore = create<GitStore>((set, get) => ({
     if (!activeRepo) return;
     set({ operationStatus: 'running' });
     const res = await window.electronAPI.gitStashDrop(activeRepo.path, stashIndex);
-    get().appendOutput(res.message);
-    set({ operationStatus: res.success ? 'success' : 'error', lastResult: res });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
     if (res.success) await get().refreshStatus();
+  },
+
+  createWorktree: async (branch, targetPath) => {
+    const { activeRepo } = get();
+    if (!activeRepo) return;
+    set({ operationStatus: 'running' });
+    const res = await window.electronAPI.gitCreateWorktree({
+      repoPath: activeRepo.path,
+      branch,
+      targetPath,
+    });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
+    if (res.success) await get().refreshStatus();
+  },
+
+  removeWorktree: async (worktreePath, force) => {
+    const { activeRepo } = get();
+    if (!activeRepo) return;
+    set({ operationStatus: 'running' });
+    const res = await window.electronAPI.gitRemoveWorktree({
+      repoPath: activeRepo.path,
+      worktreePath,
+      force,
+    });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
+    if (res.success) await get().refreshStatus();
+  },
+
+  commitInWorktree: async (worktreePath, message, alsoPush) => {
+    set({ operationStatus: 'running' });
+    const res = await window.electronAPI.gitCommitWorktree({
+      worktreePath,
+      message,
+      alsoPush,
+    });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
+    if (res.success) await get().refreshStatus();
+  },
+
+  syncWorktree: async (worktreePath, branch) => {
+    set({ operationStatus: 'running' });
+    const res = await window.electronAPI.gitPull({
+      repoPath: worktreePath,
+      strategy: 'merge',
+      branch,
+    });
+    setOperationResult(set, res);
+    get().showToast(res.message, res.success ? 'success' : 'error');
+    if (res.success) await get().refreshStatus();
+  },
+
+  openInEditor: async (target, path) => {
+    const res = await window.electronAPI.openInEditor(target, path);
+    get().showToast(res.message, res.success ? 'success' : 'error');
+  },
+
+  showToast: (message, kind = 'info') => {
+    if (toastTimer) window.clearTimeout(toastTimer);
+    set({ transientToast: { message, kind } });
+    toastTimer = window.setTimeout(() => set({ transientToast: null }), 3000);
   },
 
   setShowMergeDialog: (v) => set({ showMergeDialog: v }),
@@ -237,10 +327,4 @@ export const useGitStore = create<GitStore>((set, get) => ({
   setShowUpdateDialog: (v) => set({ showUpdateDialog: v }),
   setShowStashCreateDialog: (v) => set({ showStashCreateDialog: v }),
   setShowCreateBranchDialog: (v) => set({ showCreateBranchDialog: v }),
-
-  appendOutput: (line) =>
-    set((state) => ({
-      outputLog: [...state.outputLog.slice(-200), `[${new Date().toLocaleTimeString()}] ${line}`],
-    })),
-  clearOutput: () => set({ outputLog: [] }),
 }));

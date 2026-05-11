@@ -70,12 +70,13 @@ export function createFullWindow(): BrowserWindow {
   }
 
   fullWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 900,
-    minHeight: 600,
+    width: 920,
+    height: 580,
+    minWidth: 380,
+    minHeight: 480,
     show: false,
     frame: true,
+    resizable: true,
     titleBarStyle: 'hiddenInset',
     transparent: true,
     backgroundColor: '#00000000',
@@ -113,4 +114,19 @@ export function getPopoverWindow(): BrowserWindow | null {
 
 export function getFullWindow(): BrowserWindow | null {
   return fullWindow;
+}
+
+export function setFullWindowSize(width: number, height: number): void {
+  if (!fullWindow || fullWindow.isDestroyed()) return;
+
+  fullWindow.setResizable(width !== 380);
+  fullWindow.setMinimumSize(380, 480);
+
+  if (width === 380) {
+    fullWindow.setMaximumSize(380, 9999);
+  } else {
+    fullWindow.setMaximumSize(9999, 9999);
+  }
+
+  fullWindow.setContentSize(width, height);
 }

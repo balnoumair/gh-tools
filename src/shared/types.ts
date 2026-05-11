@@ -46,10 +46,20 @@ export interface GitStashEntry {
   branch: string;
 }
 
+export interface GitWorktree {
+  path: string;
+  branch: string;
+  primary: boolean;
+  dirty: boolean;
+  ahead: number;
+  behind: number;
+}
+
 export interface GitRepoStatus {
   currentBranch: string;
   branches: GitBranch[];
   stashes: GitStashEntry[];
+  worktrees: GitWorktree[];
   hasUncommittedChanges: boolean;
   untrackedCount: number;
   stagedCount: number;
@@ -62,6 +72,31 @@ export interface GitOperationResult {
   message: string;
   output: string;
   duration: number;
+}
+
+export type EditorTarget = 'cursor' | 'claude' | 'codex' | 'zed' | 'terminal' | 'finder';
+
+export interface EditorLaunchResult {
+  success: boolean;
+  message: string;
+}
+
+export interface WorktreeCreateOptions {
+  repoPath: string;
+  branch: string;
+  targetPath: string;
+}
+
+export interface WorktreeRemoveOptions {
+  repoPath: string;
+  worktreePath: string;
+  force?: boolean;
+}
+
+export interface WorktreeCommitOptions {
+  worktreePath: string;
+  message: string;
+  alsoPush?: boolean;
 }
 
 export interface MergeOptions {
