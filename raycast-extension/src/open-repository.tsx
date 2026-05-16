@@ -6,16 +6,13 @@ import {
   Color,
   Icon,
   List,
-  Toast,
-  showToast,
 } from "@raycast/api";
 import { execa } from "execa";
 import { useCallback, useEffect, useState } from "react";
 import { OpenFolderForm } from "./components/open-folder-form";
-import { openInEditor } from "./lib/editor";
-import { addRecent, loadRecents, removeRecent } from "./lib/recents";
+import { loadRecents, removeRecent } from "./lib/recents";
 import { RepoWorkspaceView } from "./repo-workspace";
-import type { EditorTarget, Repo } from "./lib/types";
+import type { Repo } from "./lib/types";
 
 interface RepoMeta {
   branch: string | null;
@@ -50,24 +47,6 @@ export default function OpenRepositoryCommand() {
     void refresh();
   }, [refresh]);
 
-  const handleOpen = useCallback(
-    async (repo: Repo, target: EditorTarget) => {
-      try {
-        await openInEditor(target, repo.path);
-        // Bump to front of recents on successful launch.
-        await addRecent({ path: repo.path, name: repo.name });
-        void refresh();
-      } catch (err) {
-        await showToast({
-          style: Toast.Style.Failure,
-          title: `Couldn’t open ${displayName(target)}`,
-          message: (err as Error).message,
-        });
-      }
-    },
-    [refresh],
-  );
-
   const handleRemove = useCallback(
     async (repoPath: string) => {
       await removeRecent(repoPath);
@@ -76,15 +55,9 @@ export default function OpenRepositoryCommand() {
     [refresh],
   );
 
-  const handleAddedFromForm = useCallback(
-    (added: Repo) => {
-      void refresh();
-      // Drop straight into the workspace for the freshly added repo.
-      // (Achieved by re-rendering with a fresh list; the user can pick it.)
-      void added; // currently unused; placeholder for future "auto-push" UX
-    },
-    [refresh],
-  );
+  const handleAddedFromForm = useCallback(() => {
+    void refresh();
+  }, [refresh]);
 
   return (
     <List
@@ -95,27 +68,43 @@ export default function OpenRepositoryCommand() {
       <List.EmptyView
         icon={Icon.Folder}
         title="No recent repositories"
-        description="Open a folder to add it to your recents."
+        description="Add a repository folder to get started."
         actions={
           <ActionPanel>
             <Action.Push
-              title="Open Folder…"
+              title="Add Repository…"
               icon={Icon.Plus}
               target={<OpenFolderForm onAdded={handleAddedFromForm} />}
             />
           </ActionPanel>
         }
       />
-      {recents.map((repo) => (
-        <RepoRow
-          key={repo.path}
-          repo={repo}
-          meta={meta[repo.path]}
-          onOpen={handleOpen}
-          onRemove={handleRemove}
-          onAddedFromForm={handleAddedFromForm}
+      <List.Section title="Add">
+        <List.Item
+          title="Add Repository…"
+          icon={Icon.Plus}
+          keywords={["add", "new", "folder", "open"]}
+          actions={
+            <ActionPanel>
+              <Action.Push
+                title="Add Repository…"
+                icon={Icon.Plus}
+                target={<OpenFolderForm onAdded={handleAddedFromForm} />}
+              />
+            </ActionPanel>
+          }
         />
-      ))}
+      </List.Section>
+      <List.Section title="Recent" subtitle={String(recents.length)}>
+        {recents.map((repo) => (
+          <RepoRow
+            key={repo.path}
+            repo={repo}
+            meta={meta[repo.path]}
+            onRemove={handleRemove}
+          />
+        ))}
+      </List.Section>
     </List>
   );
 }
@@ -123,15 +112,11 @@ export default function OpenRepositoryCommand() {
 function RepoRow({
   repo,
   meta,
-  onOpen,
   onRemove,
-  onAddedFromForm,
 }: {
   repo: Repo;
   meta: RepoMeta | undefined;
-  onOpen: (repo: Repo, target: EditorTarget) => void;
   onRemove: (path: string) => void;
-  onAddedFromForm: (repo: Repo) => void;
 }) {
   const accessories: List.Item.Accessory[] = [];
   if (meta?.branch) {
@@ -155,61 +140,13 @@ function RepoRow({
       accessories={accessories}
       actions={
         <ActionPanel>
-          {/*
-           * The FIRST action is Raycast's default ⏎ action. We put Open
-           * Workspace first so pressing Enter on a recent drops the user into
-           * the worktrees/branches view — usually the next thing they want
-           * after picking a repo. Open in <editor> moves to ⌘↵ etc.
-           */}
-          <ActionPanel.Section title="Workspace">
-            <Action.Push
-              title="Open Workspace"
-              icon={Icon.AppWindowList}
-              target={<RepoWorkspaceView repo={repo} />}
-            />
-          </ActionPanel.Section>
-          <ActionPanel.Section title="Open in">
-            <Action
-              title="Open in Claude Code"
-              icon={Icon.Code}
-              shortcut={{ modifiers: ["cmd"], key: "return" }}
-              onAction={() => onOpen(repo, "claude")}
-            />
-            <Action
-              title="Open in Cursor"
-              icon={Icon.Code}
-              shortcut={{ modifiers: ["cmd", "shift"], key: "return" }}
-              onAction={() => onOpen(repo, "cursor")}
-            />
-            <Action
-              title="Open in Codex"
-              icon={Icon.Code}
-              onAction={() => onOpen(repo, "codex")}
-            />
-            <Action
-              title="Open in Zed"
-              icon={Icon.Code}
-              onAction={() => onOpen(repo, "zed")}
-            />
-            <Action
-              title="Open in Terminal"
-              icon={Icon.Terminal}
-              shortcut={{ modifiers: ["cmd"], key: "t" }}
-              onAction={() => onOpen(repo, "terminal")}
-            />
-            <Action
-              title="Reveal in Finder"
-              icon={Icon.Finder}
-              shortcut={{ modifiers: ["cmd"], key: "f" }}
-              onAction={() => onOpen(repo, "finder")}
-            />
-          </ActionPanel.Section>
-          <ActionPanel.Section title="Recents">
-            <Action.Push
-              title="Open Folder…"
-              icon={Icon.Plus}
-              target={<OpenFolderForm onAdded={onAddedFromForm} />}
-            />
+          {/* First action = default ⏎ — open the workspace (worktrees + branches). */}
+          <Action.Push
+            title="Open Workspace"
+            icon={Icon.AppWindowList}
+            target={<RepoWorkspaceView repo={repo} />}
+          />
+          <ActionPanel.Section>
             <Action
               title="Remove from Recents"
               icon={Icon.XMarkCircle}
@@ -252,22 +189,5 @@ async function readRepoMeta(repoPath: string): Promise<RepoMeta> {
       branchCount: 0,
       error: (err as Error).message,
     };
-  }
-}
-
-function displayName(target: EditorTarget): string {
-  switch (target) {
-    case "cursor":
-      return "Cursor";
-    case "claude":
-      return "Claude Code";
-    case "codex":
-      return "Codex";
-    case "zed":
-      return "Zed";
-    case "terminal":
-      return "Terminal";
-    case "finder":
-      return "Finder";
   }
 }
