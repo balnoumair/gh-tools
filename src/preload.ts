@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IPC } from '@shared/ipc-channels';
+import type { SharedRecentRepo } from '@shared/recents';
 import type {
   PullRequest,
   AuthStatus,
@@ -47,6 +48,13 @@ const api = {
     ipcRenderer.invoke(IPC.APP_SET_WINDOW_SIZE, width, height),
 
   // Git management
+  gitLoadRecents: (
+    legacy?: Array<{ path: string; name: string }>,
+  ): Promise<SharedRecentRepo[]> => ipcRenderer.invoke(IPC.GIT_LOAD_RECENTS, legacy),
+  gitTouchRecent: (repo: GitRepo): Promise<SharedRecentRepo[]> =>
+    ipcRenderer.invoke(IPC.GIT_TOUCH_RECENT, repo),
+  gitRemoveRecent: (repoPath: string): Promise<SharedRecentRepo[]> =>
+    ipcRenderer.invoke(IPC.GIT_REMOVE_RECENT, repoPath),
   gitSelectRepo: (): Promise<GitRepo | null> =>
     ipcRenderer.invoke(IPC.GIT_SELECT_REPO),
   gitGetRepoStatus: (repoPath: string): Promise<GitRepoStatus> =>

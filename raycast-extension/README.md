@@ -32,8 +32,8 @@ installed. Stopping the dev server unloads it.
 
 A search-driven list focused on getting into a repo workspace quickly.
 
-- **Add** section — *Add Repository…* (⏎ on that row) opens a folder picker and adds a git repo to recents.
 - **Recent** section — each repo row shows the current branch, branch count, and dirty state.
+- **Add Repository…** — list action (**⌘N** or **⌘K** when no row is focused; also under **⌘K** on any recent row). Opens a folder picker and adds a git repo to recents.
   - **Enter (⏎)** — *Open Workspace* (worktrees, branches, editors)
   - **⌃X** — *Remove from Recents*
 
@@ -46,9 +46,9 @@ first).
 
 Pushed from *Open Repository* when you pick a repo. Three sections:
 
-- **Repository** — the primary checkout (repo root on the current branch). Tagged `local`. Actions: Open in (Claude default ⏎, Cursor ⌘↵, Codex, Zed, Terminal ⌘T, Finder ⌘F), **Create Worktree…** (when on a named branch), Commit (⌘C), Push (⌘U), Pull, Merge main → branch.
+- **Repository** — the primary checkout (repo root on the current branch). Tagged `local`. Actions: Open in (Claude default ⏎, Cursor ⌘↵, Codex, Zed, Terminal ⌘T, Finder ⌘F), **Create Worktree…** (⌘N, when on a named branch), Commit (⌘C), Push (⌘U), Pull, Merge main → branch.
 - **Worktrees** — linked worktrees only (not the primary checkout). Same editor/git actions plus **Remove Worktree** (⌘⌫).
-- **Branches** — local branches without a worktree. Actions: Create worktree…, Checkout in primary worktree, Open in &lt;editor&gt; (primary path).
+- **Local** — local branches without a worktree. Actions: Create worktree… (⏎ or ⌘N), Checkout in primary worktree, Delete / Force delete (`⌘⌫` / `⌘⇧⌫`), Open in &lt;editor&gt; (primary path).
 
 ## Implementation notes
 
@@ -66,5 +66,6 @@ Pushed from *Open Repository* when you pick a repo. Three sections:
 
 ## Known limitations (v1)
 
-- Recents inside this extension and recents inside the gh-viewer Electron menubar app are independent — no sync.
+- Recents are shared with the Electron Git Manager via `~/Library/Application Support/gh-viewer/recents.json` (max 20). Opening a repo in either surface updates the same list.
+- The menubar Electron app (PR tray) is separate — launch it with `pnpm start` from the repo root; it is not opened from this extension.
 - No publish to the Raycast Store yet; v1 is local-dev only.

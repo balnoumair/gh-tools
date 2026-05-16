@@ -12,6 +12,9 @@ export const IPC = {
   APP_SET_WINDOW_SIZE: 'app:set-window-size',
 
   // Git management
+  GIT_LOAD_RECENTS: 'git:load-recents',
+  GIT_TOUCH_RECENT: 'git:touch-recent',
+  GIT_REMOVE_RECENT: 'git:remove-recent',
   GIT_SELECT_REPO: 'git:select-repo',
   GIT_GET_REPO_STATUS: 'git:get-repo-status',
   GIT_LIST_WORKTREES: 'git:list-worktrees',

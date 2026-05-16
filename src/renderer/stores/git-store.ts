@@ -61,12 +61,14 @@ interface GitStore {
   setShowUpdateDialog: (v: boolean) => void;
   setShowStashCreateDialog: (v: boolean) => void;
   setShowCreateBranchDialog: (v: boolean) => void;
+
+  hydrateRecents: () => Promise<void>;
 }
 
 let toastTimer: number | undefined;
 type GitStoreSetter = (partial: Partial<GitStore> | ((state: GitStore) => Partial<GitStore>)) => void;
 
-function loadRecentRepos(): GitRepo[] {
+function loadLegacyRecentRepos(): GitRepo[] {
   try {
     const raw = localStorage.getItem('ghv:recent-repos');
     return raw ? JSON.parse(raw) : [];
@@ -75,15 +77,10 @@ function loadRecentRepos(): GitRepo[] {
   }
 }
 
-function saveRecentRepos(repos: GitRepo[]) {
-  localStorage.setItem('ghv:recent-repos', JSON.stringify(repos.slice(0, 10)));
-}
-
-function addToRecent(repo: GitRepo, current: GitRepo[]): GitRepo[] {
-  const filtered = current.filter((r) => r.path !== repo.path);
-  const updated = [repo, ...filtered].slice(0, 10);
-  saveRecentRepos(updated);
-  return updated;
+function toGitRepos(
+  recents: Array<{ path: string; name: string }>,
+): GitRepo[] {
+  return recents.map((repo) => ({ path: repo.path, name: repo.name }));
 }
 
 function setOperationResult(
@@ -95,7 +92,7 @@ function setOperationResult(
 
 export const useGitStore = create<GitStore>((set, get) => ({
   activeRepo: null,
-  recentRepos: loadRecentRepos(),
+  recentRepos: [],
   repoStatus: null,
   isLoadingStatus: false,
   operationStatus: 'idle',
@@ -109,13 +106,27 @@ export const useGitStore = create<GitStore>((set, get) => ({
   showStashCreateDialog: false,
   showCreateBranchDialog: false,
 
+  hydrateRecents: async () => {
+    try {
+      const legacy = loadLegacyRecentRepos();
+      const shared = await window.electronAPI.gitLoadRecents(legacy);
+      if (legacy.length > 0) {
+        localStorage.removeItem('ghv:recent-repos');
+      }
+      set({ recentRepos: toGitRepos(shared) });
+    } catch {
+      set({ recentRepos: loadLegacyRecentRepos() });
+    }
+  },
+
   selectRepo: async () => {
     try {
       const repo = await window.electronAPI.gitSelectRepo();
       if (repo) {
+        const shared = await window.electronAPI.gitTouchRecent(repo);
         set({
           activeRepo: repo,
-          recentRepos: addToRecent(repo, get().recentRepos),
+          recentRepos: toGitRepos(shared),
           repoStatus: null,
           error: null,
         });
@@ -128,9 +139,10 @@ export const useGitStore = create<GitStore>((set, get) => ({
   },
 
   openRepo: async (repo) => {
+    const shared = await window.electronAPI.gitTouchRecent(repo);
     set({
       activeRepo: repo,
-      recentRepos: addToRecent(repo, get().recentRepos),
+      recentRepos: toGitRepos(shared),
       repoStatus: null,
       error: null,
     });

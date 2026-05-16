@@ -67,6 +67,7 @@ describe('WorktreeRow', () => {
   });
 
   it('primary rows hide remove', () => {
+    useGitStore.setState({ createWorktree: vi.fn() } as any);
     root = render(
       <WorktreeRow
         worktree={{ ...dirtyBehindWorktree, primary: true, path: '/repo' }}

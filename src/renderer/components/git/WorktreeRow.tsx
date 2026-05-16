@@ -7,6 +7,7 @@ import EditorStrip from './EditorStrip';
 interface Props {
   worktree: GitWorktree;
   stagedCount: number;
+  showLocalBadge?: boolean;
 }
 
 function folderName(value: string): string {
@@ -14,12 +15,13 @@ function folderName(value: string): string {
   return parts.at(-1) ?? value;
 }
 
-export default function WorktreeRow({ worktree, stagedCount }: Props) {
+export default function WorktreeRow({ worktree, stagedCount, showLocalBadge }: Props) {
   const {
     openInEditor,
     commitInWorktree,
     removeWorktree,
     syncWorktree,
+    createWorktree,
   } = useGitStore();
   const [menuOpen, setMenuOpen] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -51,9 +53,9 @@ export default function WorktreeRow({ worktree, stagedCount }: Props) {
               <span className="truncate text-[12.5px] text-mac-label font-medium" title={worktree.path}>
                 {folderName(worktree.path)}
               </span>
-              {worktree.primary && (
+              {showLocalBadge && (
                 <span className="px-1.5 py-px rounded bg-white/10 text-[9px] uppercase text-mac-label-secondary">
-                  Primary
+                  local
                 </span>
               )}
               {worktree.dirty && (
@@ -111,6 +113,16 @@ export default function WorktreeRow({ worktree, stagedCount }: Props) {
                     setMenuOpen(false);
                   }}
                 />
+                {worktree.primary && !worktree.branch.startsWith('(detached)') && (
+                  <MenuItem
+                    label="Create worktree…"
+                    onClick={() => {
+                      const targetPath = window.prompt(`Path for new worktree (${worktree.branch})`);
+                      if (targetPath) void createWorktree(worktree.branch, targetPath);
+                      setMenuOpen(false);
+                    }}
+                  />
+                )}
                 {!worktree.primary && (
                   <>
                     <div className="my-1 mx-2 border-t border-mac-separator" />

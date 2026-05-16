@@ -3,7 +3,7 @@ import { useGitStore } from '../stores/git-store';
 import RaycastLauncher from '../components/git/RaycastLauncher';
 import TitleBar from '../components/git/TitleBar';
 import Toolbar from '../components/git/Toolbar';
-import CurrentBranchStrip from '../components/git/CurrentBranchStrip';
+import RepositorySection from '../components/git/RepositorySection';
 import WorktreeSection from '../components/git/WorktreeSection';
 import BranchSection from '../components/git/BranchSection';
 import StashSection from '../components/git/StashSection';
@@ -15,7 +15,12 @@ import StashCreateDialog from '../components/git/StashCreateDialog';
 import CreateBranchDialog from '../components/git/CreateBranchDialog';
 
 export default function FullApp() {
-  const { activeRepo, refreshStatus, isLoadingStatus, transientToast } = useGitStore();
+  const { activeRepo, refreshStatus, isLoadingStatus, transientToast, hydrateRecents } =
+    useGitStore();
+
+  useEffect(() => {
+    void hydrateRecents();
+  }, [hydrateRecents]);
 
   useEffect(() => {
     if (!activeRepo) return;
@@ -31,9 +36,8 @@ export default function FullApp() {
     <div className="h-full flex flex-col overflow-hidden bg-app-canvas">
       <TitleBar />
       <Toolbar />
-      <CurrentBranchStrip />
-
       <div className="flex-1 min-h-0 overflow-y-auto bg-mac-bg-content">
+        <RepositorySection />
         <WorktreeSection />
         <BranchSection kind="local" />
         <BranchSection kind="remote" />

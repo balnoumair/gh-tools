@@ -12,10 +12,18 @@ import {
   setPollInterval,
 } from './main/services/github-poller';
 import * as gitService from './main/services/git-service';
+import {
+  loadSharedRecents,
+  migrateLegacyRecents,
+  removeSharedRecent,
+  touchSharedRecent,
+} from './main/services/recents-store';
+import type { SharedRecentRepo } from '@shared/recents';
 import { loadShellPath, openInEditor } from './main/services/editor-launcher';
 import { IPC } from '@shared/ipc-channels';
 import type {
   EditorTarget,
+  GitRepo,
   MergeOptions,
   PushOptions,
   UpdateOptions,
@@ -94,8 +102,31 @@ ipcMain.handle(IPC.APP_SET_WINDOW_SIZE, async (_event, width: number, height: nu
 
 // --- Git IPC Handlers ---
 
+ipcMain.handle(
+  IPC.GIT_LOAD_RECENTS,
+  async (_event, legacy?: Array<{ path: string; name: string }>) => {
+    const legacyWithTime: SharedRecentRepo[] = (legacy ?? []).map((repo) => ({
+      path: repo.path,
+      name: repo.name,
+      openedAt: Date.now(),
+    }));
+    await migrateLegacyRecents(legacyWithTime);
+    return loadSharedRecents();
+  },
+);
+
+ipcMain.handle(IPC.GIT_TOUCH_RECENT, async (_event, repo: GitRepo) => {
+  return touchSharedRecent(repo);
+});
+
+ipcMain.handle(IPC.GIT_REMOVE_RECENT, async (_event, repoPath: string) => {
+  return removeSharedRecent(repoPath);
+});
+
 ipcMain.handle(IPC.GIT_SELECT_REPO, async () => {
-  return gitService.selectRepo();
+  const repo = await gitService.selectRepo();
+  if (repo) await touchSharedRecent(repo);
+  return repo;
 });
 
 ipcMain.handle(IPC.GIT_GET_REPO_STATUS, async (_e, repoPath: string) => {
