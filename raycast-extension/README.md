@@ -23,36 +23,32 @@ npm install        # or pnpm install
 npm run dev        # opens the extension in Raycast dev mode
 ```
 
-While `npm run dev` is running, the two commands appear in Raycast as if they
-were installed. Stopping the dev server unloads them.
+While `npm run dev` is running, the command appears in Raycast as if it were
+installed. Stopping the dev server unloads it.
 
 ## Commands
 
 ### Open Repository
 
-A search-driven list of recent repositories. Each row exposes:
+A search-driven list focused on getting into a repo workspace quickly.
 
-- **Open in** group: Cursor (default ↵), Claude Code (⌘↵), Codex, Zed, Terminal (⌘T), Reveal in Finder (⌘F)
-- **Workspace** group: *Open Workspace* (⌘⇧O) — pushes the per-repo view
-- **Recents** group: *Open Folder…* and *Remove from Recents* (⌃X)
+- **Add** section — *Add Repository…* (⏎ on that row) opens a folder picker and adds a git repo to recents.
+- **Recent** section — each repo row shows the current branch, branch count, and dirty state.
+  - **Enter (⏎)** — *Open Workspace* (worktrees, branches, editors)
+  - **⌃X** — *Remove from Recents*
+
+Editor launchers are **not** on this screen; use the workspace view after opening a repo.
 
 Recents are persisted via Raycast's `LocalStorage` (max 20 entries, most-recent
-first). Opening a repo bumps it to the front.
+first).
 
 ### Repo Workspace
 
-A per-repository view with two sections:
+Pushed from *Open Repository* when you pick a repo. Three sections:
 
-- **Worktrees** — each row shows the branch (with a `primary` tag for the main
-  worktree), short path, ahead/behind, and a `dirty` / `clean` tag. Per-row
-  actions: Open in (same set as the launcher), Commit Changes… (⌘C), Push (⌘U),
-  Pull, Merge main → branch, Remove worktree (destructive, ⌘⌫, hidden on the primary).
-- **Branches** — local branches without a worktree. Per-row actions: Create
-  worktree…, Checkout in primary worktree, Open in <editor> (primary path).
-
-When invoked standalone from Raycast (not pushed from the launcher), the
-command defaults to the most-recently-opened repo or shows an empty state
-pointing to *Open Repository*.
+- **Repository** — the primary checkout (repo root on the current branch). Tagged `local`. Actions: Open in (Claude default ⏎, Cursor ⌘↵, Codex, Zed, Terminal ⌘T, Finder ⌘F), **Create Worktree…** (when on a named branch), Commit (⌘C), Push (⌘U), Pull, Merge main → branch.
+- **Worktrees** — linked worktrees only (not the primary checkout). Same editor/git actions plus **Remove Worktree** (⌘⌫).
+- **Branches** — local branches without a worktree. Actions: Create worktree…, Checkout in primary worktree, Open in &lt;editor&gt; (primary path).
 
 ## Implementation notes
 

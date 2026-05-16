@@ -76,17 +76,27 @@ export function RepoWorkspaceView({ repo }: ViewProps) {
     void refresh();
   }, [refresh]);
 
-  // Branches without a worktree — these get a different action panel.
+  const primary = worktrees.find((w) => w.isPrimary);
+  const linkedWorktrees = worktrees.filter((w) => !w.isPrimary);
   const orphanBranches = branches.filter((b) => !b.hasWorktree);
 
   return (
     <List
       isLoading={loading}
       navigationTitle={repo.name}
-      searchBarPlaceholder="Filter worktrees and branches…"
+      searchBarPlaceholder="Filter checkout, worktrees, and branches…"
     >
-      <List.Section title="Worktrees" subtitle={String(worktrees.length)}>
-        {worktrees.map((wt) => (
+      {primary && (
+        <List.Section title="Repository">
+          <PrimaryCheckoutRow
+            repo={repo}
+            wt={primary}
+            onChange={refresh}
+          />
+        </List.Section>
+      )}
+      <List.Section title="Worktrees" subtitle={String(linkedWorktrees.length)}>
+        {linkedWorktrees.map((wt) => (
           <WorktreeRow key={wt.path} repo={repo} wt={wt} onChange={refresh} />
         ))}
       </List.Section>
@@ -101,6 +111,41 @@ export function RepoWorkspaceView({ repo }: ViewProps) {
 
 // --- Rows ---
 
+function PrimaryCheckoutRow({
+  repo,
+  wt,
+  onChange,
+}: {
+  repo: Repo;
+  wt: Worktree;
+  onChange: () => void;
+}) {
+  const branchLabel = wt.branch ?? `(detached @ ${wt.head})`;
+  const shortPath = path.basename(wt.path);
+  const aheadBehind = formatAheadBehind(wt.ahead, wt.behind);
+
+  const accessories: List.Item.Accessory[] = [
+    { tag: { value: "local", color: Color.Blue } },
+    wt.dirty
+      ? { tag: { value: "dirty", color: Color.Yellow } }
+      : { tag: { value: "clean", color: Color.SecondaryText } },
+  ];
+
+  return (
+    <List.Item
+      title={branchLabel}
+      subtitle={
+        aheadBehind ? `${shortPath} · ${aheadBehind}` : `${shortPath} · ${repo.path}`
+      }
+      accessories={accessories}
+      keywords={[wt.path, branchLabel, repo.path]}
+      actions={
+        <PrimaryCheckoutActions repo={repo} wt={wt} onChange={onChange} />
+      }
+    />
+  );
+}
+
 function WorktreeRow({
   repo,
   wt,
@@ -114,14 +159,11 @@ function WorktreeRow({
   const shortPath = path.basename(wt.path);
   const aheadBehind = formatAheadBehind(wt.ahead, wt.behind);
 
-  const accessories: List.Item.Accessory[] = [];
-  if (wt.isPrimary)
-    accessories.push({ tag: { value: "primary", color: Color.Blue } });
-  accessories.push(
+  const accessories: List.Item.Accessory[] = [
     wt.dirty
       ? { tag: { value: "dirty", color: Color.Yellow } }
       : { tag: { value: "clean", color: Color.SecondaryText } },
-  );
+  ];
 
   return (
     <List.Item
@@ -160,6 +202,92 @@ function BranchRow({
 
 // --- Action panels ---
 
+function PrimaryCheckoutActions({
+  repo,
+  wt,
+  onChange,
+}: {
+  repo: Repo;
+  wt: Worktree;
+  onChange: () => void;
+}) {
+  return (
+    <ActionPanel>
+      <ActionPanel.Section title="Open in">
+        <OpenInAction target="claude" displayName="Claude Code" path={wt.path} />
+        <OpenInAction
+          target="cursor"
+          displayName="Cursor"
+          path={wt.path}
+          shortcut={{ modifiers: ["cmd"], key: "return" }}
+        />
+        <OpenInAction target="codex" displayName="Codex" path={wt.path} />
+        <OpenInAction target="zed" displayName="Zed" path={wt.path} />
+        <OpenInAction
+          target="terminal"
+          displayName="Terminal"
+          path={wt.path}
+          shortcut={{ modifiers: ["cmd"], key: "t" }}
+        />
+        <OpenInAction
+          target="finder"
+          displayName="Finder"
+          path={wt.path}
+          shortcut={{ modifiers: ["cmd"], key: "f" }}
+          actionTitle="Reveal in Finder"
+        />
+      </ActionPanel.Section>
+      {wt.branch && (
+        <ActionPanel.Section title="Worktree">
+          <Action.Push
+            title="Create Worktree…"
+            icon={Icon.Plus}
+            target={
+              <CreateWorktreeForm
+                repoPath={repo.path}
+                branch={wt.branch}
+                onCreated={onChange}
+              />
+            }
+          />
+        </ActionPanel.Section>
+      )}
+      <ActionPanel.Section title="Git">
+        <Action.Push
+          title="Commit Changes…"
+          icon={Icon.Pencil}
+          shortcut={{ modifiers: ["cmd"], key: "c" }}
+          target={
+            <CommitForm
+              worktreePath={wt.path}
+              branchLabel={wt.branch ?? wt.head}
+              onCommitted={onChange}
+            />
+          }
+        />
+        <Action
+          title="Push"
+          icon={Icon.ArrowUp}
+          shortcut={{ modifiers: ["cmd"], key: "u" }}
+          onAction={() => runGit("Push", () => pushWorktree(wt.path), onChange)}
+        />
+        <Action
+          title="Pull"
+          icon={Icon.ArrowDown}
+          onAction={() => runGit("Pull", () => pullWorktree(wt.path), onChange)}
+        />
+        <Action
+          title="Merge Main → Branch"
+          icon={Icon.ArrowDownCircle}
+          onAction={() =>
+            runGit("Merge from main", () => mergeMainInto(wt.path), onChange)
+          }
+        />
+      </ActionPanel.Section>
+    </ActionPanel>
+  );
+}
+
 function WorktreeActions({
   repo,
   wt,
@@ -172,7 +300,6 @@ function WorktreeActions({
   return (
     <ActionPanel>
       <ActionPanel.Section title="Open in">
-        {/* Claude Code first → default ⏎ on a worktree row. */}
         <OpenInAction target="claude" displayName="Claude Code" path={wt.path} />
         <OpenInAction
           target="cursor"
@@ -227,15 +354,13 @@ function WorktreeActions({
             runGit("Merge from main", () => mergeMainInto(wt.path), onChange)
           }
         />
-        {!wt.isPrimary && (
-          <Action
-            title="Remove Worktree"
-            icon={Icon.Trash}
-            style={Action.Style.Destructive}
-            shortcut={{ modifiers: ["cmd"], key: "delete" }}
-            onAction={() => confirmRemove(repo.path, wt, onChange)}
-          />
-        )}
+        <Action
+          title="Remove Worktree"
+          icon={Icon.Trash}
+          style={Action.Style.Destructive}
+          shortcut={{ modifiers: ["cmd"], key: "delete" }}
+          onAction={() => confirmRemove(repo.path, wt, onChange)}
+        />
       </ActionPanel.Section>
     </ActionPanel>
   );
