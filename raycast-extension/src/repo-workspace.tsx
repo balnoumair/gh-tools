@@ -15,8 +15,10 @@ import path from "node:path";
 import { useCallback, useEffect, useState } from "react";
 import { CommitForm } from "./components/commit-form";
 import { CreateWorktreeForm } from "./components/create-worktree-form";
+import { addRecent } from "./lib/recents";
 import {
   checkoutInPrimary,
+  deleteBranch,
   listBranches,
   listWorktrees,
   mergeMainInto,
@@ -25,6 +27,7 @@ import {
   removeWorktree,
 } from "./lib/git";
 import { openInEditor } from "./lib/editor";
+import { editorActionIcon } from "./lib/editor-icons";
 import type { Branch, EditorTarget, Repo, Worktree } from "./lib/types";
 
 // NOTE: This file is no longer registered as a Raycast command (see
@@ -76,8 +79,16 @@ export function RepoWorkspaceView({ repo }: ViewProps) {
     void refresh();
   }, [refresh]);
 
-  const primary = worktrees.find((w) => w.isPrimary);
-  const linkedWorktrees = worktrees.filter((w) => !w.isPrimary);
+  useEffect(() => {
+    void addRecent({ path: repo.path, name: repo.name });
+  }, [repo.path, repo.name]);
+
+  const primary =
+    worktrees.find((w) => w.isPrimary) ??
+    worktrees.find((w) => path.resolve(w.path) === path.resolve(repo.path));
+  const linkedWorktrees = worktrees.filter(
+    (w) => !primary || path.resolve(w.path) !== path.resolve(primary.path),
+  );
   const orphanBranches = branches.filter((b) => !b.hasWorktree);
 
   return (
@@ -100,7 +111,7 @@ export function RepoWorkspaceView({ repo }: ViewProps) {
           <WorktreeRow key={wt.path} repo={repo} wt={wt} onChange={refresh} />
         ))}
       </List.Section>
-      <List.Section title="Branches" subtitle={String(orphanBranches.length)}>
+      <List.Section title="Local" subtitle={String(orphanBranches.length)}>
         {orphanBranches.map((b) => (
           <BranchRow key={b.name} repo={repo} branch={b} onChange={refresh} />
         ))}
@@ -200,6 +211,36 @@ function BranchRow({
   );
 }
 
+const CREATE_WORKTREE_SHORTCUT = {
+  modifiers: ["cmd"] as const,
+  key: "n",
+};
+
+function CreateWorktreeAction({
+  repoPath,
+  branch,
+  onCreated,
+}: {
+  repoPath: string;
+  branch: string;
+  onCreated: () => void;
+}) {
+  return (
+    <Action.Push
+      title="Create Worktree…"
+      icon={Icon.Plus}
+      shortcut={CREATE_WORKTREE_SHORTCUT}
+      target={
+        <CreateWorktreeForm
+          repoPath={repoPath}
+          branch={branch}
+          onCreated={onCreated}
+        />
+      }
+    />
+  );
+}
+
 // --- Action panels ---
 
 function PrimaryCheckoutActions({
@@ -239,16 +280,10 @@ function PrimaryCheckoutActions({
       </ActionPanel.Section>
       {wt.branch && (
         <ActionPanel.Section title="Worktree">
-          <Action.Push
-            title="Create Worktree…"
-            icon={Icon.Plus}
-            target={
-              <CreateWorktreeForm
-                repoPath={repo.path}
-                branch={wt.branch}
-                onCreated={onChange}
-              />
-            }
+          <CreateWorktreeAction
+            repoPath={repo.path}
+            branch={wt.branch}
+            onCreated={onChange}
           />
         </ActionPanel.Section>
       )}
@@ -375,22 +410,17 @@ function BranchActions({
   branch: Branch;
   onChange: () => void;
 }) {
+  // Action order = Raycast menu order. First action is the default ⏎ target.
   return (
     <ActionPanel>
-      <ActionPanel.Section title="Worktree">
-        <Action.Push
-          title="Create Worktree…"
-          icon={Icon.Plus}
-          target={
-            <CreateWorktreeForm
-              repoPath={repo.path}
-              branch={branch.name}
-              onCreated={onChange}
-            />
-          }
+      <ActionPanel.Section title="Branch">
+        <CreateWorktreeAction
+          repoPath={repo.path}
+          branch={branch.name}
+          onCreated={onChange}
         />
         <Action
-          title="Checkout in Primary Worktree"
+          title="Checkout in Repository"
           icon={Icon.Switch}
           onAction={() =>
             runGit(
@@ -400,6 +430,22 @@ function BranchActions({
             )
           }
         />
+        <Action
+          title="Delete Branch"
+          icon={Icon.Trash}
+          style={Action.Style.Destructive}
+          shortcut={{ modifiers: ["cmd"], key: "delete" }}
+          onAction={() => confirmDeleteBranch(repo.path, branch, onChange)}
+        />
+        <Action
+          title="Force Delete Branch"
+          icon={Icon.Trash}
+          style={Action.Style.Destructive}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "delete" }}
+          onAction={() =>
+            confirmDeleteBranch(repo.path, branch, onChange, true)
+          }
+        />
       </ActionPanel.Section>
       <ActionPanel.Section title="Open in">
         <OpenInAction
@@ -407,7 +453,12 @@ function BranchActions({
           displayName="Claude Code"
           path={repo.path}
         />
-        <OpenInAction target="cursor" displayName="Cursor" path={repo.path} />
+        <OpenInAction
+          target="cursor"
+          displayName="Cursor"
+          path={repo.path}
+          shortcut={{ modifiers: ["cmd"], key: "return" }}
+        />
         <OpenInAction target="codex" displayName="Codex" path={repo.path} />
         <OpenInAction target="zed" displayName="Zed" path={repo.path} />
       </ActionPanel.Section>
@@ -433,7 +484,7 @@ function OpenInAction({
   return (
     <Action
       title={actionTitle ?? `Open in ${displayName}`}
-      icon={iconFor(target)}
+      icon={editorActionIcon(target)}
       // @ts-expect-error Raycast types accept the keyboard shortcut shape we're using.
       shortcut={shortcut}
       onAction={async () => {
@@ -470,6 +521,74 @@ async function runGit(
     toast.style = Toast.Style.Failure;
     toast.title = `${label} failed`;
     toast.message = stderr || (err as Error).message;
+  }
+}
+
+async function confirmDeleteBranch(
+  repoPath: string,
+  branch: Branch,
+  onDone: () => void,
+  force = false,
+) {
+  const ok = await confirmAlert({
+    title: force ? `Force delete ${branch.name}?` : `Delete ${branch.name}?`,
+    message: force
+      ? "Unmerged commits on this branch will be lost."
+      : "Only succeeds if the branch is fully merged.",
+    primaryAction: {
+      title: force ? "Force Delete" : "Delete",
+      style: Alert.ActionStyle.Destructive,
+    },
+  });
+  if (!ok) return;
+
+  const label = force ? "Force delete branch" : "Delete branch";
+  const toast = await showToast({
+    style: Toast.Style.Animated,
+    title: `${label}…`,
+  });
+
+  try {
+    await deleteBranch(repoPath, branch.name, force);
+    toast.style = Toast.Style.Success;
+    toast.title = `Deleted ${branch.name}`;
+    onDone();
+  } catch (err) {
+    if (!force) {
+      const stderr = (err as { stderr?: string }).stderr;
+      const offerForce = await confirmAlert({
+        title: "Branch not fully merged",
+        message:
+          stderr?.trim() ||
+          "Delete anyway? Unmerged commits will be lost.",
+        primaryAction: {
+          title: "Force Delete",
+          style: Alert.ActionStyle.Destructive,
+        },
+      });
+      if (!offerForce) {
+        toast.style = Toast.Style.Failure;
+        toast.title = "Delete failed";
+        toast.message = stderr || (err as Error).message;
+        return;
+      }
+      try {
+        await deleteBranch(repoPath, branch.name, true);
+        toast.style = Toast.Style.Success;
+        toast.title = `Force-deleted ${branch.name}`;
+        onDone();
+      } catch (err2) {
+        toast.style = Toast.Style.Failure;
+        toast.title = "Force delete failed";
+        toast.message =
+          (err2 as { stderr?: string }).stderr || (err2 as Error).message;
+      }
+    } else {
+      toast.style = Toast.Style.Failure;
+      toast.title = "Force delete failed";
+      toast.message =
+        (err as { stderr?: string }).stderr || (err as Error).message;
+    }
   }
 }
 
@@ -536,16 +655,3 @@ function formatAheadBehind(
   return parts.join(" ");
 }
 
-function iconFor(target: EditorTarget): Icon {
-  switch (target) {
-    case "cursor":
-    case "claude":
-    case "codex":
-    case "zed":
-      return Icon.Code;
-    case "terminal":
-      return Icon.Terminal;
-    case "finder":
-      return Icon.Finder;
-  }
-}

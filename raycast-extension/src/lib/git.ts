@@ -1,6 +1,16 @@
 import { execa } from "execa";
+import fs from "node:fs";
 import path from "node:path";
 import type { Branch, Worktree } from "./types";
+
+function isPrimaryWorktree(worktreePath: string, repoPath: string): boolean {
+  if (path.resolve(worktreePath) === path.resolve(repoPath)) return true;
+  try {
+    return fs.statSync(path.join(worktreePath, ".git")).isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Thin wrapper around `git` invocations. All commands shell out to the system
@@ -29,11 +39,14 @@ async function gitVerbose(
  */
 export async function listWorktrees(repoPath: string): Promise<Worktree[]> {
   const raw = await git(["worktree", "list", "--porcelain"], repoPath);
-  const records = raw.split(/\n\n+/).filter((r) => r.trim().length > 0);
+  const records = raw
+    .split(/\n\s*\n/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
 
   const worktrees: Worktree[] = [];
-  for (let i = 0; i < records.length; i++) {
-    const lines = records[i].split("\n");
+  for (const record of records) {
+    const lines = record.split("\n");
     let wtPath = "";
     let head = "";
     let branch: string | null = null;
@@ -64,7 +77,7 @@ export async function listWorktrees(repoPath: string): Promise<Worktree[]> {
       path: wtPath,
       branch,
       head,
-      isPrimary: i === 0, // git lists the main worktree first
+      isPrimary: isPrimaryWorktree(wtPath, repoPath),
       dirty,
       ahead: aheadBehind.ahead,
       behind: aheadBehind.behind,
@@ -226,4 +239,14 @@ export async function checkoutInPrimary(
   branch: string,
 ): Promise<void> {
   await gitVerbose(["checkout", branch], repoPath);
+}
+
+/** Delete a local branch (`-d` merged only, `-D` force). */
+export async function deleteBranch(
+  repoPath: string,
+  branch: string,
+  force = false,
+): Promise<void> {
+  const flag = force ? "-D" : "-d";
+  await gitVerbose(["branch", flag, branch], repoPath);
 }
