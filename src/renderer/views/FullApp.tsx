@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { repoFromRendererSearchParams } from '@shared/deep-link';
 import { useGitStore } from '../stores/git-store';
 import RaycastLauncher from '../components/git/RaycastLauncher';
 import TitleBar from '../components/git/TitleBar';
@@ -15,12 +16,31 @@ import StashCreateDialog from '../components/git/StashCreateDialog';
 import CreateBranchDialog from '../components/git/CreateBranchDialog';
 
 export default function FullApp() {
-  const { activeRepo, refreshStatus, isLoadingStatus, transientToast, hydrateRecents } =
-    useGitStore();
+  const {
+    activeRepo,
+    refreshStatus,
+    isLoadingStatus,
+    transientToast,
+    hydrateRecents,
+    openRepo,
+  } = useGitStore();
 
   useEffect(() => {
     void hydrateRecents();
   }, [hydrateRecents]);
+
+  useEffect(() => {
+    const initialRepo = repoFromRendererSearchParams(window.location.search);
+    if (initialRepo) {
+      void openRepo(initialRepo);
+    }
+
+    const unsubscribe = window.electronAPI.onOpenRepoRequested((repo) => {
+      void openRepo(repo);
+    });
+
+    return unsubscribe;
+  }, [openRepo]);
 
   useEffect(() => {
     if (!activeRepo) return;

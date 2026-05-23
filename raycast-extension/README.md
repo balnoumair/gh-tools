@@ -17,14 +17,20 @@ Raycast's command bar.
 
 ## Install (local dev)
 
+From the **repo root** (Electron + Raycast together):
+
 ```bash
-cd raycast-extension
-npm install        # or pnpm install
-npm run dev        # opens the extension in Raycast dev mode
+pnpm setup   # once
+pnpm start
 ```
 
-While `npm run dev` is running, the command appears in Raycast as if it were
-installed. Stopping the dev server unloads it.
+Or this extension only:
+
+```bash
+pnpm dev:extension
+```
+
+While dev is running, the command appears in Raycast. Ctrl+C stops it.
 
 ## Commands
 
@@ -67,5 +73,5 @@ Pushed from *Open Repository* when you pick a repo. Three sections:
 ## Known limitations (v1)
 
 - Recents are shared with the Electron Git Manager via `~/Library/Application Support/gh-viewer/recents.json` (max 20). Opening a repo in either surface updates the same list.
-- The menubar Electron app (PR tray) is separate — launch it with `pnpm start` from the repo root; it is not opened from this extension.
-- No publish to the Raycast Store yet; v1 is local-dev only.
+- Run **both** from the repo root: `pnpm start`. Or `pnpm dev:app` / `pnpm dev:extension` separately.
+- **Open in gh-viewer** (⌘G) opens the Electron Git Manager via `gh-viewer://` (run `pnpm start` or `pnpm dev:app` first).

@@ -1,12 +1,27 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, app } from 'electron';
 import path from 'node:path';
+import type { GitRepo } from '@shared/types';
 
 let popoverWindow: BrowserWindow | null = null;
 let fullWindow: BrowserWindow | null = null;
 
-function getRendererUrl(mode: 'tray' | 'full'): string {
+function fullWindowQuery(repo?: GitRepo): Record<string, string> {
+  const query: Record<string, string> = { mode: 'full' };
+  if (repo) {
+    query.repoPath = repo.path;
+    query.repoName = repo.name;
+  }
+  return query;
+}
+
+function getRendererUrl(mode: 'tray' | 'full', repo?: GitRepo): string {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    return `${MAIN_WINDOW_VITE_DEV_SERVER_URL}?mode=${mode}`;
+    const params = new URLSearchParams({ mode });
+    if (repo && mode === 'full') {
+      params.set('repoPath', repo.path);
+      params.set('repoName', repo.name);
+    }
+    return `${MAIN_WINDOW_VITE_DEV_SERVER_URL}?${params.toString()}`;
   }
   return ''; // handled by loadFile below
 }
@@ -62,7 +77,7 @@ export function createPopoverWindow(): BrowserWindow {
   return popoverWindow;
 }
 
-export function createFullWindow(): BrowserWindow {
+export function createFullWindow(repo?: GitRepo): BrowserWindow {
   if (fullWindow && !fullWindow.isDestroyed()) {
     fullWindow.show();
     fullWindow.focus();
@@ -90,10 +105,10 @@ export function createFullWindow(): BrowserWindow {
   });
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    fullWindow.loadURL(getRendererUrl('full'));
+    fullWindow.loadURL(getRendererUrl('full', repo));
   } else {
     fullWindow.loadFile(getRendererFilePath(), {
-      query: { mode: 'full' },
+      query: fullWindowQuery(repo),
     });
   }
 
@@ -103,6 +118,9 @@ export function createFullWindow(): BrowserWindow {
 
   fullWindow.on('closed', () => {
     fullWindow = null;
+    if (process.platform === 'darwin' && !fullWindow) {
+      app.dock?.hide();
+    }
   });
 
   return fullWindow;

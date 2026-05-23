@@ -40,8 +40,14 @@ const api = {
   },
 
   // App
-  openFullWindow: (): Promise<void> =>
-    ipcRenderer.invoke(IPC.APP_OPEN_FULL_WINDOW),
+  openFullWindow: (repo?: GitRepo): Promise<void> =>
+    ipcRenderer.invoke(IPC.APP_OPEN_FULL_WINDOW, repo),
+  onOpenRepoRequested: (callback: (repo: GitRepo) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, repo: GitRepo) =>
+      callback(repo);
+    ipcRenderer.on(IPC.APP_OPEN_REPO, handler);
+    return () => ipcRenderer.removeListener(IPC.APP_OPEN_REPO, handler);
+  },
   openExternal: (url: string): Promise<void> =>
     ipcRenderer.invoke(IPC.APP_OPEN_EXTERNAL, url),
   setWindowSize: (width: number, height: number): Promise<void> =>
