@@ -31,6 +31,7 @@ describe('preload API wiring', () => {
 
     await api.getPRs();
     await api.forceRefresh();
+    await api.openFullWindow({ path: '/repo', name: 'repo' });
     await api.openExternal('https://example.com');
     await api.setWindowSize(380, 680);
     await api.gitListWorktrees('/repo');
@@ -41,6 +42,10 @@ describe('preload API wiring', () => {
 
     expect(invokeMock).toHaveBeenCalledWith(IPC.GITHUB_GET_PRS);
     expect(invokeMock).toHaveBeenCalledWith(IPC.GITHUB_FORCE_REFRESH);
+    expect(invokeMock).toHaveBeenCalledWith(IPC.APP_OPEN_FULL_WINDOW, {
+      path: '/repo',
+      name: 'repo',
+    });
     expect(invokeMock).toHaveBeenCalledWith(IPC.APP_OPEN_EXTERNAL, 'https://example.com');
     expect(invokeMock).toHaveBeenCalledWith(IPC.APP_SET_WINDOW_SIZE, 380, 680);
     expect(invokeMock).toHaveBeenCalledWith(IPC.GIT_LIST_WORKTREES, '/repo');

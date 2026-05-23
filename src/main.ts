@@ -1,7 +1,14 @@
 import { app, ipcMain, shell } from 'electron';
+import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { createTray } from './main/tray';
-import { createPopoverWindow, createFullWindow, getPopoverWindow, setFullWindowSize } from './main/windows';
+import { createPopoverWindow, getPopoverWindow, setFullWindowSize } from './main/windows';
+import { openFullWindowPicker, openRepoInFullWindow } from './main/full-window';
+import {
+  extractDeepLinksFromArgv,
+  GH_VIEWER_PROTOCOL,
+  parseRepoDeepLink,
+} from '@shared/deep-link';
 import { getToken, getAuthStatus } from './main/services/auth';
 import {
   startPolling,
@@ -38,12 +45,60 @@ if (started) {
   app.quit();
 }
 
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+}
+
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(
+      GH_VIEWER_PROTOCOL,
+      process.execPath,
+      [path.resolve(process.argv[1])],
+    );
+  }
+} else {
+  app.setAsDefaultProtocolClient(GH_VIEWER_PROTOCOL);
+}
+
+let appIsReady = false;
+let pendingRepoOpen: GitRepo | null = null;
+
+function handleDeepLink(rawUrl: string): void {
+  const repo = parseRepoDeepLink(rawUrl);
+  if (!repo) return;
+
+  if (!appIsReady) {
+    pendingRepoOpen = repo;
+    return;
+  }
+
+  void openRepoInFullWindow(repo);
+}
+
+function drainArgvDeepLinks(argv: string[]): void {
+  for (const url of extractDeepLinksFromArgv(argv)) {
+    handleDeepLink(url);
+  }
+}
+
+app.on('second-instance', (_event, argv) => {
+  drainArgvDeepLinks(argv);
+});
+
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  handleDeepLink(url);
+});
+
 // Hide dock icon — this is a menu bar app
 if (process.platform === 'darwin') {
   app.dock?.hide();
 }
 
 app.on('ready', async () => {
+  appIsReady = true;
   await loadShellPath();
 
   // Create popover window first, then tray
@@ -62,6 +117,13 @@ app.on('ready', async () => {
   const token = await getToken();
   if (token) {
     startPolling();
+  }
+
+  drainArgvDeepLinks(process.argv);
+  if (pendingRepoOpen) {
+    const repo = pendingRepoOpen;
+    pendingRepoOpen = null;
+    void openRepoInFullWindow(repo);
   }
 });
 
@@ -88,8 +150,12 @@ ipcMain.handle(IPC.GITHUB_SET_POLL_INTERVAL, async (_event, minutes: number) => 
   setPollInterval(minutes);
 });
 
-ipcMain.handle(IPC.APP_OPEN_FULL_WINDOW, async () => {
-  createFullWindow();
+ipcMain.handle(IPC.APP_OPEN_FULL_WINDOW, async (_event, repo?: GitRepo) => {
+  if (repo?.path) {
+    await openRepoInFullWindow(repo);
+    return;
+  }
+  openFullWindowPicker();
 });
 
 ipcMain.handle(IPC.APP_OPEN_EXTERNAL, async (_event, url: string) => {

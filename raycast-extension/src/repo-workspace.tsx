@@ -15,6 +15,7 @@ import path from "node:path";
 import { useCallback, useEffect, useState } from "react";
 import { CommitForm } from "./components/commit-form";
 import { CreateWorktreeForm } from "./components/create-worktree-form";
+import { OpenInGhViewerAction } from "./components/open-in-gh-viewer-action";
 import { addRecent } from "./lib/recents";
 import {
   checkoutInPrimary,
@@ -278,6 +279,9 @@ function PrimaryCheckoutActions({
           actionTitle="Reveal in Finder"
         />
       </ActionPanel.Section>
+      <ActionPanel.Section title="App">
+        <OpenInGhViewerAction repo={repo} />
+      </ActionPanel.Section>
       {wt.branch && (
         <ActionPanel.Section title="Worktree">
           <CreateWorktreeAction
@@ -357,6 +361,9 @@ function WorktreeActions({
           shortcut={{ modifiers: ["cmd"], key: "f" }}
           actionTitle="Reveal in Finder"
         />
+      </ActionPanel.Section>
+      <ActionPanel.Section title="App">
+        <OpenInGhViewerAction repo={repo} />
       </ActionPanel.Section>
       <ActionPanel.Section title="Git">
         <Action.Push
@@ -461,6 +468,12 @@ function BranchActions({
         />
         <OpenInAction target="codex" displayName="Codex" path={repo.path} />
         <OpenInAction target="zed" displayName="Zed" path={repo.path} />
+      </ActionPanel.Section>
+      <ActionPanel.Section title="App">
+        <OpenInGhViewerAction
+          repo={repo}
+          shortcut={{ modifiers: ["cmd"], key: "g" }}
+        />
       </ActionPanel.Section>
     </ActionPanel>
   );

@@ -10,6 +10,7 @@ import {
 import { execa } from "execa";
 import { useCallback, useEffect, useState } from "react";
 import { OpenFolderForm } from "./components/open-folder-form";
+import { OpenInGhViewerAction } from "./components/open-in-gh-viewer-action";
 import { loadRecents, removeRecent } from "./lib/recents";
 import { RepoWorkspaceView } from "./repo-workspace";
 import type { Repo } from "./lib/types";
@@ -146,6 +147,12 @@ function RepoRow({
             icon={Icon.AppWindowList}
             target={<RepoWorkspaceView repo={repo} />}
           />
+          <ActionPanel.Section title="App">
+            <OpenInGhViewerAction
+              repo={repo}
+              shortcut={{ modifiers: ["cmd"], key: "g" }}
+            />
+          </ActionPanel.Section>
           <ActionPanel.Section>
             <AddRepositoryAction onAdded={onAdded} />
           </ActionPanel.Section>
