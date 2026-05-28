@@ -10,10 +10,10 @@
 :root {
   color-scheme: dark;
 
-  /* Accent — neutral white */
-  --mac-accent: rgba(255, 255, 255, 0.92);
-  --mac-accent-hover: #FFFFFF;
-  --mac-accent-active: rgba(255, 255, 255, 0.78);
+  /* Accent — soft off-white (calmer than pure white for primary buttons) */
+  --mac-accent: #E3E3E6;
+  --mac-accent-hover: #EDEDF0;
+  --mac-accent-active: #D2D2D6;
   --mac-accent-soft: rgba(255, 255, 255, 0.08);
   --mac-accent-glow: rgba(255, 255, 255, 0.14);
 

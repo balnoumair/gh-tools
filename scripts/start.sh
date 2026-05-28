@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Run gh-viewer (Electron) and the Raycast extension together.
+# Run the Git Manager Electron app and the Raycast extension together.
+# (PR Pulse, the menubar app, is a separate build — run it with `pnpm dev:pulse`.
+#  Two electron-forge starts can't share one project's .vite output at once.)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,8 +16,8 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "Starting gh-viewer (Electron)..."
-(cd "$ROOT" && pnpm run dev:app) &
+echo "Starting Git Manager (Electron)..."
+(cd "$ROOT" && pnpm run dev:manager) &
 ELECTRON_PID=$!
 
 echo "Starting Git Manager (Raycast)..."
@@ -23,6 +25,6 @@ echo "Starting Git Manager (Raycast)..."
 RAYCAST_PID=$!
 
 echo ""
-echo "Both running — menubar app + Raycast extension."
+echo "Both running — Git Manager app + Raycast extension."
 echo "Press Ctrl+C to stop both."
 wait "$ELECTRON_PID" "$RAYCAST_PID"

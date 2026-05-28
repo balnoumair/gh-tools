@@ -152,7 +152,7 @@ export const useGitStore = create<GitStore>((set, get) => ({
 
   closeRepo: async () => {
     set({ activeRepo: null, repoStatus: null, error: null });
-    await window.electronAPI.setWindowSize(920, 580);
+    await window.electronAPI.setWindowSize(380, 680);
   },
 
   refreshStatus: async () => {

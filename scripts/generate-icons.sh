@@ -1,41 +1,68 @@
 #!/usr/bin/env bash
-# Regenerate assets/icon.png, assets/icon.icns, and raycast-extension/assets/extension-icon.png
-# Usage: bash scripts/generate-icons.sh [source.png]
+# Regenerate packaged icons for each Electron product from its source PNG.
+#
+#   assets/<app>/icon-source.png  ->  assets/<app>/icon.png + assets/<app>/icon.icns
+#
+# The Raycast extension shares the Git Manager artwork, so its
+# extension-icon.png is refreshed from assets/git-manager/icon.png.
+#
+# Usage:
+#   bash scripts/generate-icons.sh                # all apps
+#   bash scripts/generate-icons.sh git-manager    # one app
+#   bash scripts/generate-icons.sh pr-pulse
+#
+# To (re)create the placeholder source art first:
+#   python3 scripts/generate-placeholder-sources.py
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SOURCE="${1:-$ROOT/assets/icon-source.png}"
+RAYCAST_ICON="$ROOT/raycast-extension/assets/extension-icon.png"
 
-if [[ ! -f "$SOURCE" ]]; then
-  echo "Source image not found: $SOURCE" >&2
-  echo "Pass a 1024×1024 PNG or place icon-source.png in assets/." >&2
-  exit 1
+APPS=("$@")
+if [[ ${#APPS[@]} -eq 0 ]]; then
+  APPS=(git-manager pr-pulse)
 fi
 
-ASSETS="$ROOT/assets"
-RAYCAST_ICON="$ROOT/raycast-extension/assets/extension-icon.png"
-ICONSET="$ASSETS/icon.iconset"
+generate_for() {
+  local app="$1"
+  local dir="$ROOT/assets/$app"
+  local source="$dir/icon-source.png"
 
-mkdir -p "$ASSETS" "$(dirname "$RAYCAST_ICON")"
-sips -z 1024 1024 "$SOURCE" --out "$ASSETS/icon.png" >/dev/null
+  if [[ ! -f "$source" ]]; then
+    echo "Source image not found: $source" >&2
+    echo "Run: python3 scripts/generate-placeholder-sources.py" >&2
+    echo "or drop a 1024×1024 PNG at that path." >&2
+    exit 1
+  fi
 
-rm -rf "$ICONSET"
-mkdir -p "$ICONSET"
-sips -z 16 16     "$ASSETS/icon.png" --out "$ICONSET/icon_16x16.png" >/dev/null
-sips -z 32 32     "$ASSETS/icon.png" --out "$ICONSET/icon_16x16@2x.png" >/dev/null
-sips -z 32 32     "$ASSETS/icon.png" --out "$ICONSET/icon_32x32.png" >/dev/null
-sips -z 64 64     "$ASSETS/icon.png" --out "$ICONSET/icon_32x32@2x.png" >/dev/null
-sips -z 128 128   "$ASSETS/icon.png" --out "$ICONSET/icon_128x128.png" >/dev/null
-sips -z 256 256   "$ASSETS/icon.png" --out "$ICONSET/icon_128x128@2x.png" >/dev/null
-sips -z 256 256   "$ASSETS/icon.png" --out "$ICONSET/icon_256x256.png" >/dev/null
-sips -z 512 512   "$ASSETS/icon.png" --out "$ICONSET/icon_256x256@2x.png" >/dev/null
-sips -z 512 512   "$ASSETS/icon.png" --out "$ICONSET/icon_512x512.png" >/dev/null
-sips -z 1024 1024 "$ASSETS/icon.png" --out "$ICONSET/icon_512x512@2x.png" >/dev/null
-iconutil -c icns "$ICONSET" -o "$ASSETS/icon.icns"
-rm -rf "$ICONSET"
+  sips -z 1024 1024 "$source" --out "$dir/icon.png" >/dev/null
 
-sips -z 512 512 "$ASSETS/icon.png" --out "$RAYCAST_ICON" >/dev/null
+  local iconset="$dir/icon.iconset"
+  rm -rf "$iconset"
+  mkdir -p "$iconset"
+  sips -z 16 16     "$dir/icon.png" --out "$iconset/icon_16x16.png" >/dev/null
+  sips -z 32 32     "$dir/icon.png" --out "$iconset/icon_16x16@2x.png" >/dev/null
+  sips -z 32 32     "$dir/icon.png" --out "$iconset/icon_32x32.png" >/dev/null
+  sips -z 64 64     "$dir/icon.png" --out "$iconset/icon_32x32@2x.png" >/dev/null
+  sips -z 128 128   "$dir/icon.png" --out "$iconset/icon_128x128.png" >/dev/null
+  sips -z 256 256   "$dir/icon.png" --out "$iconset/icon_128x128@2x.png" >/dev/null
+  sips -z 256 256   "$dir/icon.png" --out "$iconset/icon_256x256.png" >/dev/null
+  sips -z 512 512   "$dir/icon.png" --out "$iconset/icon_256x256@2x.png" >/dev/null
+  sips -z 512 512   "$dir/icon.png" --out "$iconset/icon_512x512.png" >/dev/null
+  sips -z 1024 1024 "$dir/icon.png" --out "$iconset/icon_512x512@2x.png" >/dev/null
+  iconutil -c icns "$iconset" -o "$dir/icon.icns"
+  rm -rf "$iconset"
 
-echo "Wrote $ASSETS/icon.png"
-echo "Wrote $ASSETS/icon.icns"
-echo "Wrote $RAYCAST_ICON"
+  echo "Wrote $dir/icon.png"
+  echo "Wrote $dir/icon.icns"
+
+  if [[ "$app" == "git-manager" ]]; then
+    mkdir -p "$(dirname "$RAYCAST_ICON")"
+    sips -z 512 512 "$dir/icon.png" --out "$RAYCAST_ICON" >/dev/null
+    echo "Wrote $RAYCAST_ICON"
+  fi
+}
+
+for app in "${APPS[@]}"; do
+  generate_for "$app"
+done

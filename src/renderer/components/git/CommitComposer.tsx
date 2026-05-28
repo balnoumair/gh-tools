@@ -45,7 +45,7 @@ export default function CommitComposer({ ahead, stagedCount, onCommit, onCancel 
           type="button"
           disabled={!message.trim() || submitting}
           onClick={() => submit(false)}
-          className="px-2.5 py-1 rounded bg-white text-[#171717] text-[11.5px] font-medium disabled:opacity-35"
+          className="px-2.5 py-1 rounded bg-mac-accent text-[#171717] text-[11.5px] font-medium hover:bg-mac-accent-hover active:bg-mac-accent-active disabled:opacity-35"
         >
           Commit
         </button>

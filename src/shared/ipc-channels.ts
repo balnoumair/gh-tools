@@ -7,7 +7,6 @@ export const IPC = {
   GITHUB_SET_POLL_INTERVAL: 'github:set-poll-interval',
 
   // App
-  APP_OPEN_FULL_WINDOW: 'app:open-full-window',
   APP_OPEN_REPO: 'app:open-repo',
   APP_OPEN_EXTERNAL: 'app:open-external',
   APP_SET_WINDOW_SIZE: 'app:set-window-size',
