@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { repoFromRendererSearchParams } from '@shared/deep-link';
 import { useGitStore } from '../stores/git-store';
-import RaycastLauncher from '../components/git/RaycastLauncher';
+import WorkspaceEmptyState from '../components/git/WorkspaceEmptyState';
 import TitleBar from '../components/git/TitleBar';
 import Toolbar from '../components/git/Toolbar';
 import RepositorySection from '../components/git/RepositorySection';
@@ -50,23 +50,28 @@ export default function FullApp() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [activeRepo?.path, refreshStatus]);
 
-  if (!activeRepo) return <RaycastLauncher />;
-
   return (
     <div className="h-full flex flex-col overflow-hidden bg-app-canvas">
       <TitleBar />
-      <Toolbar />
-      <div className="flex-1 min-h-0 overflow-y-auto bg-mac-bg-content">
-        <RepositorySection />
-        <WorktreeSection />
-        <BranchSection kind="local" />
-        <BranchSection kind="remote" />
-        <StashSection />
-      </div>
 
-      <Footer />
+      {!activeRepo ? (
+        <WorkspaceEmptyState />
+      ) : (
+        <>
+          <Toolbar />
+          <div className="flex-1 min-h-0 overflow-y-auto bg-mac-bg-content">
+            <RepositorySection />
+            <WorktreeSection />
+            <BranchSection kind="local" />
+            <BranchSection kind="remote" />
+            <StashSection />
+          </div>
 
-      {isLoadingStatus && (
+          <Footer />
+        </>
+      )}
+
+      {isLoadingStatus && activeRepo && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
           <div className="flex items-center gap-2.5 px-4 py-2.5 bg-mac-bg-popover rounded-lg shadow-menu text-[12.5px] text-mac-label">
             <span className="gh-mark text-mac-accent w-3.5 h-3.5 animate-spark" aria-hidden />

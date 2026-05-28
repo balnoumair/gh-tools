@@ -58,7 +58,7 @@ function ToolbarButton({
       aria-label={label}
       className={`h-8 inline-flex items-center justify-center gap-1.5 rounded-full px-3 text-[12px] font-medium transition-colors disabled:opacity-30 disabled:pointer-events-none ${
         primary
-          ? 'bg-white text-[#171717] hover:bg-white/90'
+          ? 'bg-mac-accent text-[#171717] hover:bg-mac-accent-hover active:bg-mac-accent-active'
           : 'bg-white/[0.055] text-mac-label-secondary hover:text-mac-label hover:bg-white/[0.08]'
       } ${iconOnly ? 'w-8 px-0' : ''}`}
     >

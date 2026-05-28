@@ -1,4 +1,4 @@
-import { BrowserWindow, app } from 'electron';
+import { BrowserWindow } from 'electron';
 import path from 'node:path';
 import type { GitRepo } from '@shared/types';
 
@@ -85,9 +85,10 @@ export function createFullWindow(repo?: GitRepo): BrowserWindow {
   }
 
   fullWindow = new BrowserWindow({
-    width: 920,
-    height: 580,
+    width: 380,
+    height: 680,
     minWidth: 380,
+    maxWidth: 380,
     minHeight: 480,
     show: false,
     frame: true,
@@ -118,9 +119,6 @@ export function createFullWindow(repo?: GitRepo): BrowserWindow {
 
   fullWindow.on('closed', () => {
     fullWindow = null;
-    if (process.platform === 'darwin' && !fullWindow) {
-      app.dock?.hide();
-    }
   });
 
   return fullWindow;

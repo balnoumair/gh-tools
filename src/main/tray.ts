@@ -1,5 +1,4 @@
 import { Tray, nativeImage, BrowserWindow, screen } from 'electron';
-import path from 'node:path';
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
@@ -58,10 +57,13 @@ function createTrayIcon(): Electron.NativeImage {
   return img;
 }
 
-export function createTray(getPopoverWindow: () => BrowserWindow | null): Tray {
+export function createTray(
+  getPopoverWindow: () => BrowserWindow | null,
+  tooltip = 'PR Pulse',
+): Tray {
   const icon = createTrayIcon();
   tray = new Tray(icon);
-  tray.setToolTip('gh-viewer');
+  tray.setToolTip(tooltip);
 
   tray.on('click', (_event, bounds) => {
     popoverWindow = getPopoverWindow();

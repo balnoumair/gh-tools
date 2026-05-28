@@ -6,17 +6,29 @@ import { MakerRpm } from '@electron-forge/maker-rpm';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { APP_META, resolveAppTarget } from './src/shared/app-meta';
+
+// Which product to package. Selected via APP_TARGET (see the package.json
+// `*:pulse` / `*:manager` scripts). Must match vite.main.config.ts's define.
+const meta = APP_META[resolveAppTarget(process.env.APP_TARGET)];
 
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: './assets/icon',
-    protocols: [
-      {
-        name: 'GH Viewer',
-        schemes: ['gh-viewer'],
-      },
-    ],
+    name: meta.productName,
+    appBundleId: meta.bundleId,
+    icon: meta.iconBase,
+    // Only the Git Manager app handles gh-viewer:// deep links (used by the
+    // Raycast extension to open repositories).
+    protocols:
+      meta.target === 'git-manager'
+        ? [
+            {
+              name: 'Git Manager',
+              schemes: ['gh-viewer'],
+            },
+          ]
+        : [],
   },
   rebuildConfig: {},
   makers: [

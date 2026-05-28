@@ -40,8 +40,6 @@ const api = {
   },
 
   // App
-  openFullWindow: (repo?: GitRepo): Promise<void> =>
-    ipcRenderer.invoke(IPC.APP_OPEN_FULL_WINDOW, repo),
   onOpenRepoRequested: (callback: (repo: GitRepo) => void): (() => void) => {
     const handler = (_event: Electron.IpcRendererEvent, repo: GitRepo) =>
       callback(repo);
