@@ -1,25 +1,18 @@
 # App icons
 
-Each Electron product has its own artwork under `assets/<app>/`.
+Each Electron product has its own artwork under `assets/<app>/`. These are
+committed PNG/ICNS files — edit or replace them directly.
 
 | File | Use |
 |------|-----|
-| `git-manager/icon-source.png` | Git Manager master artwork (1024×1024) |
 | `git-manager/icon.png` / `git-manager/icon.icns` | Git Manager app + dock |
-| `pr-pulse/icon-source.png` | PR Pulse master artwork (1024×1024) |
 | `pr-pulse/icon.png` / `pr-pulse/icon.icns` | PR Pulse app |
-| `../raycast-extension/assets/extension-icon.png` | Raycast (shares Git Manager art; refreshed by `pnpm icons`) |
+| `pr-pulse/tray-template.png` / `@2x` | PR Pulse macOS menu-bar icon (monochrome template) |
+| `../raycast-extension/assets/icon.png` | Raycast extension (a copy of the Git Manager icon) |
 
-The current `*-source.png` files are generated placeholders. To recreate them:
-
-```bash
-python3 scripts/generate-placeholder-sources.py
-```
-
-To rebuild `icon.png` / `icon.icns` (and the Raycast icon) from the sources —
-drop in real artwork at `assets/<app>/icon-source.png` first, then:
-
-```bash
-pnpm icons                                    # both apps
-bash scripts/generate-icons.sh git-manager    # just one
-```
+To change an icon, replace the relevant file(s). For macOS, `icon.icns` is the
+packaged app icon (build one from a 1024×1024 PNG with `iconutil`); `icon.png`
+is the dock/runtime icon. The menu-bar `tray-template.png` must be black on a
+transparent background so macOS can recolor it for light/dark menu bars. If you
+update the Git Manager icon, copy it to the Raycast path above to keep them in
+sync.

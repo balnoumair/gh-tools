@@ -17,7 +17,6 @@
     "make": "APP_TARGET=git-manager electron-forge make",
     "make:manager": "APP_TARGET=git-manager electron-forge make",
     "make:pulse": "APP_TARGET=pr-pulse electron-forge make",
-    "icons": "bash scripts/generate-icons.sh",
     "lint": "oxlint --tsconfig tsconfig.json src/",
     "setup": "pnpm install && node node_modules/electron/install.js && node node_modules/esbuild/install.js",
     "test": "vitest run",
