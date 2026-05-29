@@ -1,58 +1,16 @@
 import { Tray, nativeImage, BrowserWindow, screen } from 'electron';
+import path from 'node:path';
 
 let tray: Tray | null = null;
 let popoverWindow: BrowserWindow | null = null;
 
 function createTrayIcon(): Electron.NativeImage {
-  // Create a simple 22x22 template image for macOS menu bar
-  // Using a minimal git-branch-like icon rendered as raw pixels
-  const size = 22;
-  const canvas = Buffer.alloc(size * size * 4, 0);
-
-  // Draw a simple dot pattern that represents a PR icon
-  const setPixel = (x: number, y: number, alpha: number) => {
-    if (x >= 0 && x < size && y >= 0 && y < size) {
-      const offset = (y * size + x) * 4;
-      canvas[offset] = 0;     // R
-      canvas[offset + 1] = 0; // G
-      canvas[offset + 2] = 0; // B
-      canvas[offset + 3] = alpha; // A
-    }
-  };
-
-  // Draw a circle (PR icon - simplified)
-  const drawCircle = (cx: number, cy: number, r: number) => {
-    for (let y = -r; y <= r; y++) {
-      for (let x = -r; x <= r; x++) {
-        if (x * x + y * y <= r * r) {
-          setPixel(cx + x, cy + y, 220);
-        }
-      }
-    }
-  };
-
-  // Draw vertical line
-  for (let y = 5; y <= 16; y++) {
-    setPixel(8, y, 200);
-    setPixel(9, y, 200);
-  }
-
-  // Draw branch line
-  for (let y = 5; y <= 10; y++) {
-    setPixel(13, y, 200);
-    setPixel(14, y, 200);
-  }
-  // Diagonal connector
-  setPixel(12, 11, 200);
-  setPixel(11, 12, 200);
-  setPixel(10, 13, 200);
-
-  // Circles at endpoints
-  drawCircle(9, 4, 2);
-  drawCircle(9, 17, 2);
-  drawCircle(14, 4, 2);
-
-  const img = nativeImage.createFromBuffer(canvas, { width: size, height: size });
+  // The PR Pulse glyph (heartbeat waveform + notification dot) as a macOS
+  // menu-bar template image — black on transparent, no background, so the OS
+  // recolors it for the active menu bar. The matching @2x file is picked up
+  // automatically for retina displays.
+  const iconPath = path.join(__dirname, '../../assets/pr-pulse/tray-template.png');
+  const img = nativeImage.createFromPath(iconPath);
   img.setTemplateImage(true);
   return img;
 }

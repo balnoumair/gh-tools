@@ -3,7 +3,7 @@
   "name": "gh-viewer-git-manager",
   "title": "Git Manager",
   "description": "Search recent repositories and manage worktrees, branches, and editors from Raycast.",
-  "icon": "extension-icon.png",
+  "icon": "icon.png",
   "author": "bryanal-noumair",
   "license": "MIT",
   "categories": ["Developer Tools"],
