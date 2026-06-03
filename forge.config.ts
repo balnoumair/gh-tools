@@ -18,6 +18,9 @@ const config: ForgeConfig = {
     name: meta.productName,
     appBundleId: meta.bundleId,
     icon: meta.iconBase,
+    extraResource: ['assets'],
+    // PR Pulse is a menubar-only agent app — no dock icon, no app switcher.
+    ...(meta.target === 'pr-pulse' ? { extendInfo: { LSUIElement: 1 } } : {}),
     // Only the Git Manager app handles gh-viewer:// deep links (used by the
     // Raycast extension to open repositories).
     protocols:

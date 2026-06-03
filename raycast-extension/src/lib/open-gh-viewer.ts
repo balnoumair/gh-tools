@@ -1,5 +1,4 @@
-import { Toast, showToast } from "@raycast/api";
-import { open } from "@raycast/utils";
+import { Toast, showToast, open } from "@raycast/api";
 import { buildGhViewerRepoUrl } from "./gh-viewer-deep-link";
 
 export async function openRepoInGhViewer(repo: {

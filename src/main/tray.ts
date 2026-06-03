@@ -1,4 +1,4 @@
-import { Tray, nativeImage, BrowserWindow, screen } from 'electron';
+import { app, Menu, Tray, nativeImage, BrowserWindow, screen } from 'electron';
 import path from 'node:path';
 
 let tray: Tray | null = null;
@@ -9,7 +9,8 @@ function createTrayIcon(): Electron.NativeImage {
   // menu-bar template image — black on transparent, no background, so the OS
   // recolors it for the active menu bar. The matching @2x file is picked up
   // automatically for retina displays.
-  const iconPath = path.join(__dirname, '../../assets/pr-pulse/tray-template.png');
+  const base = app.isPackaged ? process.resourcesPath : path.join(__dirname, '../..');
+  const iconPath = path.join(base, 'assets/pr-pulse/tray-template.png');
   const img = nativeImage.createFromPath(iconPath);
   img.setTemplateImage(true);
   return img;
@@ -22,6 +23,12 @@ export function createTray(
   const icon = createTrayIcon();
   tray = new Tray(icon);
   tray.setToolTip(tooltip);
+
+  tray.on('right-click', () => {
+    tray!.popUpContextMenu(
+      Menu.buildFromTemplate([{ label: `Quit ${tooltip}`, click: () => app.quit() }])
+    );
+  });
 
   tray.on('click', (_event, bounds) => {
     popoverWindow = getPopoverWindow();

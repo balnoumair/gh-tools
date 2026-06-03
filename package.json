@@ -11,6 +11,7 @@
     "dev:manager": "APP_TARGET=git-manager electron-forge start",
     "dev:pulse": "APP_TARGET=pr-pulse electron-forge start",
     "dev:extension": "bash scripts/dev-extension.sh",
+    "build:extension": "cd raycast-extension && npm run build",
     "package": "APP_TARGET=git-manager electron-forge package",
     "package:manager": "APP_TARGET=git-manager electron-forge package",
     "package:pulse": "APP_TARGET=pr-pulse electron-forge package",

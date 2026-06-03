@@ -6,6 +6,8 @@ import {
   Alert,
   Color,
   Icon,
+  type KeyEquivalent,
+  type KeyModifier,
   List,
   Toast,
   confirmAlert,
@@ -213,8 +215,8 @@ function BranchRow({
 }
 
 const CREATE_WORKTREE_SHORTCUT = {
-  modifiers: ["cmd"] as const,
-  key: "n",
+  modifiers: ["cmd"] as KeyModifier[],
+  key: "n" as KeyEquivalent,
 };
 
 function CreateWorktreeAction({
