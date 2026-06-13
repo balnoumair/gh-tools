@@ -52,6 +52,7 @@
     "vitest": "^1.6.1"
   },
   "dependencies": {
+    "@pierre/diffs": "^1.2.10",
     "electron-squirrel-startup": "^1.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

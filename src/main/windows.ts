@@ -4,6 +4,7 @@ import type { GitRepo } from '@shared/types';
 
 let popoverWindow: BrowserWindow | null = null;
 let fullWindow: BrowserWindow | null = null;
+let reviewerWindow: BrowserWindow | null = null;
 
 function fullWindowQuery(repo?: GitRepo): Record<string, string> {
   const query: Record<string, string> = { mode: 'full' };
@@ -124,12 +125,55 @@ export function createFullWindow(repo?: GitRepo): BrowserWindow {
   return fullWindow;
 }
 
+export function createReviewerWindow(): BrowserWindow {
+  if (reviewerWindow && !reviewerWindow.isDestroyed()) {
+    reviewerWindow.show();
+    reviewerWindow.focus();
+    return reviewerWindow;
+  }
+
+  reviewerWindow = new BrowserWindow({
+    width: 1280,
+    height: 820,
+    minWidth: 960,
+    minHeight: 640,
+    show: false,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 14, y: 12 },
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    reviewerWindow.loadURL(`${MAIN_WINDOW_VITE_DEV_SERVER_URL}?mode=reviewer`);
+  } else {
+    reviewerWindow.loadFile(getRendererFilePath(), { query: { mode: 'reviewer' } });
+  }
+
+  reviewerWindow.once('ready-to-show', () => {
+    reviewerWindow?.show();
+  });
+
+  reviewerWindow.on('closed', () => {
+    reviewerWindow = null;
+  });
+
+  return reviewerWindow;
+}
+
 export function getPopoverWindow(): BrowserWindow | null {
   return popoverWindow;
 }
 
 export function getFullWindow(): BrowserWindow | null {
   return fullWindow;
+}
+
+export function getReviewerWindow(): BrowserWindow | null {
+  return reviewerWindow;
 }
 
 export function setFullWindowSize(width: number, height: number): void {

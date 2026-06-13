@@ -19,15 +19,20 @@ function createTrayIcon(): Electron.NativeImage {
 export function createTray(
   getPopoverWindow: () => BrowserWindow | null,
   tooltip = 'PR Pulse',
+  onOpenReviewer?: () => void,
 ): Tray {
   const icon = createTrayIcon();
   tray = new Tray(icon);
   tray.setToolTip(tooltip);
 
   tray.on('right-click', () => {
-    tray!.popUpContextMenu(
-      Menu.buildFromTemplate([{ label: `Quit ${tooltip}`, click: () => app.quit() }])
-    );
+    const menuItems: Electron.MenuItemConstructorOptions[] = [];
+    if (onOpenReviewer) {
+      menuItems.push({ label: 'Open Reviewer', click: onOpenReviewer });
+      menuItems.push({ type: 'separator' });
+    }
+    menuItems.push({ label: `Quit ${tooltip}`, click: () => app.quit() });
+    tray!.popUpContextMenu(Menu.buildFromTemplate(menuItems));
   });
 
   tray.on('click', (_event, bounds) => {

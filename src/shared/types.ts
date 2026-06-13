@@ -76,6 +76,19 @@ export interface GitOperationResult {
 
 export type EditorTarget = 'cursor' | 'claude' | 'codex' | 'zed' | 'terminal' | 'finder';
 
+// --- Reviewer Types ---
+
+export type ReviewDecision = 'approve' | 'request_changes' | 'comment';
+
+export interface PRDiffMeta {
+  base: string;
+  head: string;
+  additions: number;
+  deletions: number;
+  files: number;
+  commits: number;
+}
+
 export interface EditorLaunchResult {
   success: boolean;
   message: string;
