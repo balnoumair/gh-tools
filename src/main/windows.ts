@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import type { GitRepo } from '@shared/types';
 
@@ -159,6 +159,9 @@ export function createReviewerWindow(): BrowserWindow {
 
   reviewerWindow.on('closed', () => {
     reviewerWindow = null;
+    if (process.platform === 'darwin') {
+      app.dock?.hide();
+    }
   });
 
   return reviewerWindow;
