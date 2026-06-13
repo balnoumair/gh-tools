@@ -18,6 +18,8 @@ import type {
   WorktreeCreateOptions,
   WorktreeRemoveOptions,
   WorktreeCommitOptions,
+  PRDiffMeta,
+  ReviewDecision,
 } from '@shared/types';
 
 const api = {
@@ -95,6 +97,20 @@ const api = {
   // Editor launchers
   openInEditor: (target: EditorTarget, path: string): Promise<EditorLaunchResult> =>
     ipcRenderer.invoke(IPC.EDITOR_OPEN, target, path),
+
+  // Reviewer
+  getPRDiff: (
+    repoFullName: string,
+    number: number,
+  ): Promise<{ meta: PRDiffMeta; patch: string }> =>
+    ipcRenderer.invoke(IPC.REVIEWER_GET_DIFF, repoFullName, number),
+  submitReview: (
+    repoFullName: string,
+    number: number,
+    decision: ReviewDecision,
+    body?: string,
+  ): Promise<void> =>
+    ipcRenderer.invoke(IPC.REVIEWER_SUBMIT_REVIEW, repoFullName, number, decision, body),
 };
 
 export type ElectronAPI = typeof api;
