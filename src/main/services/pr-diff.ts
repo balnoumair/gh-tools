@@ -29,7 +29,7 @@ export async function getPRDiff(
     ),
     execAsync(
       'gh',
-      ['pr', 'diff', String(number), '-R', repoFullName, '--patch'],
+      ['pr', 'diff', String(number), '-R', repoFullName],
       { maxBuffer: 20 * 1024 * 1024, timeout: 60_000 },
     ),
   ]);

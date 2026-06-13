@@ -1,4 +1,5 @@
-import { app } from 'electron';
+import { app, nativeImage } from 'electron';
+import path from 'node:path';
 import { createPopoverWindow, createReviewerWindow, getPopoverWindow, getReviewerWindow } from '../windows';
 import { createTray } from '../tray';
 import { getToken } from '../services/auth';
@@ -15,9 +16,9 @@ import { APP_META } from '@shared/app-meta';
 
 const meta = APP_META['pr-pulse'];
 
-function openReviewer(): void {
+async function openReviewer(): Promise<void> {
   if (process.platform === 'darwin') {
-    app.dock?.show();
+    await app.dock?.show();
   }
   createReviewerWindow();
 }
@@ -28,6 +29,8 @@ export function runPrPulseApp(): void {
 
   // Menubar-only app — no dock presence until reviewer opens.
   if (process.platform === 'darwin') {
+    const iconPath = path.join(__dirname, '../../assets/pr-pulse/icon.png');
+    app.dock?.setIcon(nativeImage.createFromPath(iconPath));
     app.dock?.hide();
   }
 
