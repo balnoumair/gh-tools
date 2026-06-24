@@ -89,6 +89,12 @@ export interface PRDiffMeta {
   commits: number;
 }
 
+export interface TerminalTab {
+  id: string;
+  label: string;
+  cwd: string;
+}
+
 export interface EditorLaunchResult {
   success: boolean;
   message: string;

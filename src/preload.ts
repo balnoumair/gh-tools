@@ -99,6 +99,7 @@ const api = {
     ipcRenderer.invoke(IPC.EDITOR_OPEN, target, path),
 
   // Reviewer
+  getHomedir: (): Promise<string> => ipcRenderer.invoke(IPC.REVIEWER_GET_HOMEDIR),
   getPRDiff: (
     repoFullName: string,
     number: number,

@@ -38,5 +38,6 @@ export const IPC = {
   // Reviewer
   REVIEWER_GET_DIFF: 'reviewer:get-diff',
   REVIEWER_SUBMIT_REVIEW: 'reviewer:submit-review',
+  REVIEWER_GET_HOMEDIR: 'reviewer:get-homedir',
   REVIEWER_OPEN: 'reviewer:open',
 } as const;

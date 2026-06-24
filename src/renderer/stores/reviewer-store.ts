@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PullRequest, PRDiffMeta, ReviewDecision } from '@shared/types';
+import type { PullRequest, PRDiffMeta, ReviewDecision, TerminalTab } from '@shared/types';
 
 interface DiffEntry {
   meta: PRDiffMeta;
@@ -8,9 +8,18 @@ interface DiffEntry {
   error: string | null;
 }
 
+type ActivePane = 'pr' | 'terminal';
+
 interface ReviewerStore {
+  activePane: ActivePane;
   selectedPRId: number | null;
-  selectPR: (id: number) => void;
+  selectPR: (id: number | null) => void;
+
+  terminalTabs: TerminalTab[];
+  selectedTerminalId: string | null;
+  selectTerminal: (id: string) => void;
+  addTerminalTab: () => Promise<void>;
+  removeTerminalTab: (id: string) => void;
 
   decisions: Record<number, ReviewDecision | null>;
   setDecision: (prId: number, d: ReviewDecision | null) => void;
@@ -28,8 +37,43 @@ interface ReviewerStore {
 }
 
 export const useReviewerStore = create<ReviewerStore>((set, get) => ({
+  activePane: 'pr',
   selectedPRId: null,
-  selectPR: (id) => set({ selectedPRId: id }),
+  selectPR: (id) => set({ activePane: 'pr', selectedPRId: id, selectedTerminalId: null }),
+
+  terminalTabs: [],
+  selectedTerminalId: null,
+  selectTerminal: (id) => set({ activePane: 'terminal', selectedTerminalId: id }),
+  addTerminalTab: async () => {
+    const cwd = await window.electronAPI.getHomedir();
+    const { terminalTabs } = get();
+    const tab: TerminalTab = {
+      id: crypto.randomUUID(),
+      label: `terminal ${terminalTabs.length + 1}`,
+      cwd,
+    };
+    set({
+      terminalTabs: [...terminalTabs, tab],
+      activePane: 'terminal',
+      selectedTerminalId: tab.id,
+      selectedPRId: null,
+    });
+  },
+  removeTerminalTab: (id) => {
+    const { terminalTabs, selectedTerminalId, activePane } = get();
+    const next = terminalTabs.filter((t) => t.id !== id);
+    const removedSelected = selectedTerminalId === id;
+    set({
+      terminalTabs: next,
+      selectedTerminalId: removedSelected ? (next[0]?.id ?? null) : selectedTerminalId,
+      activePane:
+        removedSelected && activePane === 'terminal'
+          ? next.length > 0
+            ? 'terminal'
+            : 'pr'
+          : activePane,
+    });
+  },
 
   decisions: {},
   setDecision: (prId, d) =>
