@@ -28,7 +28,7 @@ export function createTray(
   tray.on('right-click', () => {
     const menuItems: Electron.MenuItemConstructorOptions[] = [];
     if (onOpenReviewer) {
-      menuItems.push({ label: 'Open Reviewer', click: onOpenReviewer });
+      menuItems.push({ label: 'Open Pulse', click: onOpenReviewer });
       menuItems.push({ type: 'separator' });
     }
     menuItems.push({ label: `Quit ${tooltip}`, click: () => app.quit() });

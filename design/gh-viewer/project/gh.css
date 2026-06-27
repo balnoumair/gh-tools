@@ -92,3 +92,6 @@
   appearance: none; border: 0; background: transparent; color: inherit;
   font: inherit; cursor: pointer; padding: 0;
 }
+
+/* Terminal cursor blink */
+@keyframes gh-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }

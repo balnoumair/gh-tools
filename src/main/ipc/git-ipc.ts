@@ -1,5 +1,10 @@
 import { ipcMain, shell } from 'electron';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { setFullWindowSize } from '../windows';
+import { parseUnifiedDiff } from '../services/diff-parser';
+
+const execFileAsync = promisify(execFile);
 import * as gitService from '../services/git-service';
 import {
   loadSharedRecents,
@@ -122,5 +127,26 @@ export function registerGitIpc(): void {
 
   ipcMain.handle(IPC.EDITOR_OPEN, async (_e, target: EditorTarget, targetPath: string) => {
     return openInEditor(target, targetPath);
+  });
+
+  ipcMain.handle(IPC.GIT_GET_WORKTREE_DIFF, async (_e, worktreePath: string) => {
+    const run = async (args: string[]) => {
+      try {
+        const { stdout } = await execFileAsync('git', ['-C', worktreePath, ...args]);
+        return stdout;
+      } catch {
+        return '';
+      }
+    };
+
+    const [uncommittedText, committedText] = await Promise.all([
+      run(['diff', 'HEAD']),
+      run(['log', '--patch', '--format=', 'origin/main..HEAD']),
+    ]);
+
+    return {
+      uncommitted: parseUnifiedDiff(uncommittedText),
+      committed: parseUnifiedDiff(committedText),
+    };
   });
 }

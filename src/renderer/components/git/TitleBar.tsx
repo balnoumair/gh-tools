@@ -73,7 +73,7 @@ export default function TitleBar() {
         >
           <span className="gh-mark w-3 h-3 text-mac-label-secondary" aria-hidden />
           <span className="min-w-0 truncate text-[12px] text-mac-label-secondary">
-            Git Manager
+            Pulse
           </span>
           <span className="text-[12px] text-mac-label-quaternary">›</span>
           <span className="min-w-0 truncate text-[12px] text-mac-label font-medium">

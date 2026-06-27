@@ -55,7 +55,7 @@ export default function WorktreeRow({ worktree, stagedCount, showLocalBadge }: P
               </span>
               {showLocalBadge && (
                 <span className="px-1.5 py-px rounded bg-white/10 text-[9px] uppercase text-mac-label-secondary">
-                  local
+                  primary
                 </span>
               )}
               {worktree.dirty && (

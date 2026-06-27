@@ -1,6 +1,6 @@
 // picker.jsx — three variations of the repo picker (post-launch empty + recents).
 
-const MacWindow = ({ children, title = "Git Manager", subtitle, w = 920, h = 580 }) => (
+const MacWindow = ({ children, title = "Git Manager", subtitle, center, w = 920, h = 580 }) => (
   <div className="gh" style={{
     width: w, height: h,
     background: 'var(--gh-bg-1)',
@@ -19,21 +19,24 @@ const MacWindow = ({ children, title = "Git Manager", subtitle, w = 920, h = 580
       borderBottom: '1px solid var(--gh-line-1)',
       background: 'linear-gradient(180deg, #1c1c1f 0%, #161618 100%)',
       WebkitAppRegion: 'drag',
+      position: 'relative', zIndex: 40,
     }}>
       <div className="gh-traffic">
         <span className="gh-tl close" /><span className="gh-tl min" /><span className="gh-tl max" />
       </div>
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 8,
-        fontSize: 12, color: 'var(--gh-fg-2)', fontWeight: 500,
-      }}>
-        <IBranch size={12} stroke={1.6} />
-        <span>{title}</span>
-        {subtitle && <>
-          <span style={{ color: 'var(--gh-fg-4)' }}>›</span>
-          <span style={{ color: 'var(--gh-fg-1)', fontWeight: 600 }}>{subtitle}</span>
-        </>}
-      </div>
+      {center || (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          fontSize: 12, color: 'var(--gh-fg-2)', fontWeight: 500,
+        }}>
+          <IBranch size={12} stroke={1.6} />
+          <span>{title}</span>
+          {subtitle && <>
+            <span style={{ color: 'var(--gh-fg-4)' }}>›</span>
+            <span style={{ color: 'var(--gh-fg-1)', fontWeight: 600 }}>{subtitle}</span>
+          </>}
+        </div>
+      )}
       <div />
     </div>
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>

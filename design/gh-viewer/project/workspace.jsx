@@ -15,9 +15,9 @@ const editors = [
 // ---------------------------------------------------------------------------
 // Section header used throughout the tiny app.
 const SectionHeader = ({ title, count, open, onToggle, action }) => (
-  <button className="gh-btn" onClick={onToggle} style={{
+  <div className="gh-btn" role="button" onClick={onToggle} style={{
     width: '100%', display: 'flex', alignItems: 'center', gap: 6,
-    padding: '8px 12px',
+    padding: '8px 12px', cursor: 'pointer',
     fontSize: 10.5, fontWeight: 600, letterSpacing: '0.08em',
     textTransform: 'uppercase', color: 'var(--gh-fg-3)',
     borderTop: '1px solid var(--gh-line-1)',
@@ -31,7 +31,7 @@ const SectionHeader = ({ title, count, open, onToggle, action }) => (
     <span>{title}</span>
     {count != null && <span style={{ fontFamily: 'var(--gh-font-mono)', color: 'var(--gh-fg-4)', letterSpacing: 0 }}>{count}</span>}
     {action && <span style={{ marginLeft: 'auto' }} onClick={e => e.stopPropagation()}>{action}</span>}
-  </button>
+  </div>
 );
 
 const IconBtn = ({ children, title, danger, onClick }) => (
@@ -67,6 +67,68 @@ const menuMeta = {
   fontFamily: 'var(--gh-font-mono)', fontSize: 10.5,
   color: 'var(--gh-fg-3)',
 };
+// Unified "Open with" split-button, Codex-style: primary opens last-used,
+// chevron opens a dropdown listing all editor targets.
+const OpenWithSplit = () => {
+  const [pick, setPick] = React.useState('cursor');
+  const [open, setOpen] = React.useState(false);
+  const current = editors.find(e => e.key === pick) || editors[0];
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex' }}>
+      <button title={`Open in ${current.label}`} className="gh-btn" style={{
+        height: 24, padding: '0 8px 0 7px',
+        borderRadius: '5px 0 0 5px',
+        background: 'rgba(255,255,255,0.05)',
+        border: '1px solid var(--gh-line-1)',
+        borderRight: 'none',
+        color: 'var(--gh-fg-1)',
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        fontSize: 11.5,
+      }}
+        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.10)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
+        <EditorGlyph name={current.key} size={12} />
+        <span>Open</span>
+      </button>
+      <button title="Choose editor" className="gh-btn" onClick={() => setOpen(o => !o)} style={{
+        height: 24, width: 20, borderRadius: '0 5px 5px 0',
+        background: open ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.05)',
+        border: '1px solid var(--gh-line-1)',
+        color: 'var(--gh-fg-2)',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <IChevD size={9} stroke={2} />
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 28, left: 0, zIndex: 30,
+          minWidth: 160,
+          background: 'rgba(28,28,32,0.98)',
+          border: '1px solid var(--gh-line-2)',
+          borderRadius: 7,
+          boxShadow: '0 10px 28px rgba(0,0,0,0.55)',
+          padding: 4,
+        }}>
+          {editors.map(ed => (
+            <button key={ed.key} className="gh-btn"
+              onClick={() => { setPick(ed.key); setOpen(false); }}
+              style={{
+                ...menuItem,
+                background: ed.key === pick ? 'rgba(255,255,255,0.06)' : 'transparent',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+              onMouseLeave={e => e.currentTarget.style.background = ed.key === pick ? 'rgba(255,255,255,0.06)' : 'transparent'}>
+              <EditorGlyph name={ed.key} size={12} />
+              <span>{ed.label}</span>
+              {ed.key === pick && <span style={menuMeta}>default</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  );
+};
+
 const TinyWorktreeRow = ({ w, last }) => {
   const name = w.path.split('/').pop();
   const [composing, setComposing] = React.useState(false);
@@ -110,35 +172,12 @@ const TinyWorktreeRow = ({ w, last }) => {
         </span>
         <span style={{ flex: '0 0 auto' }}>↑{w.ahead} ↓{w.behind}</span>
       </div>
-      {/* editor strip + commit chip + remove */}
+      {/* Open-with split button + status + overflow */}
       <div style={{
         marginTop: 8, paddingLeft: 20,
         display: 'flex', alignItems: 'center', gap: 4,
       }}>
-        {editors.slice(0, 4).map(ed => (
-          <button key={ed.key} title={`Open in ${ed.label}`} className="gh-btn" style={{
-            height: 24, padding: '0 8px',
-            borderRadius: 5,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid var(--gh-line-1)',
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.09)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
-            <EditorGlyph name={ed.key} size={13} />
-          </button>
-        ))}
-        <button title="Open in Terminal" className="gh-btn" style={{
-          height: 24, width: 26, borderRadius: 5,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid var(--gh-line-1)',
-          color: 'var(--gh-fg-2)',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.09)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
-          <ITerminal size={12} />
-        </button>
+        <OpenWithSplit />
         <span style={{ flex: 1 }} />
         {/* Status hints — quiet, non-button */}
         {(w.dirty || w.behind > 0) && (
@@ -198,9 +237,6 @@ const TinyWorktreeRow = ({ w, last }) => {
             <IUpload size={12} /> Push
           </button>
           <div style={{ height: 1, background: 'var(--gh-line-1)', margin: '3px 0' }} />
-          <button className="gh-btn" onClick={() => setMenuOpen(false)} style={menuItem}>
-            <IFolder size={12} /> Reveal in Finder
-          </button>
           {!w.primary && (
             <button className="gh-btn" onClick={() => setMenuOpen(false)} style={{ ...menuItem, color: 'var(--gh-danger)' }}>
               <ITrash size={12} /> Remove worktree
@@ -315,16 +351,182 @@ const TinyBranchRow = ({ b, current, last }) => (
 );
 
 // ---------------------------------------------------------------------------
+// Repo switcher — Zed-style. A pill in the title bar opens a menubar-style
+// panel: search, recent repos (branch + dirty + last opened), active check,
+// and an "Open folder…" action.
+const RepoMonogram = ({ name, size = 22 }) => (
+  <span style={{
+    width: size, height: size, borderRadius: 5,
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid var(--gh-line-1)',
+    color: 'var(--gh-fg-2)',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    fontFamily: 'var(--gh-font-mono)', fontSize: Math.round(size * 0.48),
+    fontWeight: 600, lineHeight: 1, flex: '0 0 auto',
+  }}>{name[0]}</span>
+);
+
+const RepoSwitcher = ({ repos, active, onPick }) => {
+  const [open, setOpen] = React.useState(false);
+  const [q, setQ] = React.useState('');
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+
+  const filtered = repos.filter(r =>
+    r.name.toLowerCase().includes(q.toLowerCase()) ||
+    r.path.toLowerCase().includes(q.toLowerCase()));
+
+  return (
+    <span ref={ref} style={{ position: 'relative', display: 'inline-flex', WebkitAppRegion: 'no-drag' }}>
+      {/* Trigger pill */}
+      <button className="gh-btn" onClick={() => { setOpen(o => !o); setQ(''); }} style={{
+        display: 'inline-flex', alignItems: 'center', gap: 7,
+        height: 26, padding: '0 7px 0 6px', borderRadius: 7,
+        background: open ? 'rgba(255,255,255,0.08)' : 'transparent',
+        border: '1px solid', borderColor: open ? 'var(--gh-line-2)' : 'transparent',
+      }}
+        onMouseEnter={e => { if (!open) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+        onMouseLeave={e => { if (!open) e.currentTarget.style.background = 'transparent'; }}>
+        <RepoMonogram name={active.name} size={18} />
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--gh-fg-1)' }}>{active.name}</span>
+        {active.dirty && <span className="gh-dot warn" style={{ width: 6, height: 6 }} />}
+        <span style={{ display: 'inline-flex', color: 'var(--gh-fg-4)' }}><IChevD size={10} stroke={2} /></span>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div style={{
+          position: 'absolute', top: 32, left: '50%', transform: 'translateX(-50%)',
+          width: 312, zIndex: 60,
+          background: 'rgba(28,28,32,0.98)',
+          border: '1px solid var(--gh-line-2)',
+          borderRadius: 10,
+          boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+          overflow: 'hidden',
+          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        }}>
+          {/* Search */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '9px 11px',
+            borderBottom: '1px solid var(--gh-line-1)',
+          }}>
+            <ISearch size={13} style={{ color: 'var(--gh-fg-4)' }} />
+            <input
+              value={q} onChange={e => setQ(e.target.value)} autoFocus
+              placeholder="Search repositories…"
+              style={{
+                flex: 1, background: 'transparent', border: 0, outline: 'none',
+                color: 'var(--gh-fg-1)', fontSize: 12.5, fontFamily: 'var(--gh-font-ui)',
+              }} />
+            <kbd style={{
+              fontSize: 10, fontFamily: 'var(--gh-font-mono)', color: 'var(--gh-fg-4)',
+              border: '1px solid var(--gh-line-2)', borderRadius: 4, padding: '1px 5px',
+            }}>⌘O</kbd>
+          </div>
+
+          {/* Recent label */}
+          <div style={{
+            padding: '8px 12px 4px',
+            fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
+            textTransform: 'uppercase', color: 'var(--gh-fg-4)',
+          }}>Recent</div>
+
+          {/* Repo list */}
+          <div className="gh-scroll" style={{ maxHeight: 296, overflow: 'auto', padding: '0 4px 4px' }}>
+            {filtered.map(r => {
+              const isActive = r.name === active.name;
+              return (
+                <button key={r.path} className="gh-btn"
+                  onClick={() => { onPick(r); setOpen(false); }}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+                    padding: '7px 8px', borderRadius: 7, textAlign: 'left',
+                    background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                  }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}>
+                  <RepoMonogram name={r.name} size={28} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{
+                        fontSize: 12.5, fontWeight: 600, color: 'var(--gh-fg-1)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>{r.name}</span>
+                      {r.dirty && <span className="gh-dot warn" style={{ width: 6, height: 6, flex: '0 0 auto' }} />}
+                    </span>
+                    <span style={{
+                      display: 'flex', alignItems: 'center', gap: 6, marginTop: 2,
+                      fontSize: 10.5, fontFamily: 'var(--gh-font-mono)', color: 'var(--gh-fg-4)',
+                    }}>
+                      <IBranch size={9} stroke={1.6} />
+                      <span style={{
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150,
+                      }}>{r.branch}</span>
+                    </span>
+                  </span>
+                  <span style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3,
+                    flex: '0 0 auto',
+                  }}>
+                    {isActive
+                      ? <ICheck size={13} style={{ color: 'var(--gh-fg-1)' }} />
+                      : <span style={{ width: 13, height: 13 }} />}
+                    <span style={{ fontSize: 10, color: 'var(--gh-fg-4)', fontFamily: 'var(--gh-font-mono)' }}>{r.last}</span>
+                  </span>
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div style={{
+                padding: '14px 12px', textAlign: 'center',
+                fontSize: 11.5, color: 'var(--gh-fg-4)',
+              }}>No repositories match “{q}”</div>
+            )}
+          </div>
+
+          {/* Footer action */}
+          <button className="gh-btn" style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+            padding: '9px 12px',
+            borderTop: '1px solid var(--gh-line-1)',
+            fontSize: 12, color: 'var(--gh-fg-2)',
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <IFolder size={13} style={{ color: 'var(--gh-fg-3)' }} />
+            <span>Open folder…</span>
+            <span style={{ flex: 1 }} />
+            <span style={{ fontSize: 10.5, color: 'var(--gh-fg-4)', fontFamily: 'var(--gh-font-mono)' }}>Clone…</span>
+          </button>
+        </div>
+      )}
+    </span>
+  );
+};
+
+// ---------------------------------------------------------------------------
 // Tiny app shell — narrow window, single-pane stack.
 const TinyApp = () => {
   const [open, setOpen] = React.useState({
     worktrees: true, branchesLocal: true, branchesRemote: false, stash: false,
   });
+  const [repo, setRepo] = React.useState(SAMPLE_RECENTS[0]);
   const toggle = (k) => setOpen(o => ({ ...o, [k]: !o[k] }));
   const sb = SAMPLE_BRANCHES;
 
   return (
-    <MacWindow title="Git Manager" subtitle="gh-viewer" w={380} h={680}>
+    <MacWindow w={380} h={680} center={
+      <RepoSwitcher repos={SAMPLE_RECENTS} active={repo} onPick={setRepo} />
+    }>
       {/* Top toolbar — Commit is primary; Push/Fetch secondary */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6,
@@ -378,9 +580,9 @@ const TinyApp = () => {
         <span style={{
           color: 'var(--gh-fg-1)', flex: 1, minWidth: 0,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>{sb.current}</span>
+        }}>{repo.branch}</span>
         <span style={{ color: 'var(--gh-fg-3)' }}>↑6 ↓0</span>
-        <span className="gh-dot warn" />
+        {repo.dirty && <span className="gh-dot warn" />}
       </div>
 
       {/* Scrollable stack */}
@@ -500,12 +702,14 @@ const TinyApp = () => {
         <span style={{
           flex: 1, minWidth: 0,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>~/Projects/gh-viewer</span>
+        }}>{repo.path}</span>
         <span style={{ color: 'var(--gh-fg-4)' }}>·</span>
-        <span><span className="gh-dot warn" style={{ marginRight: 4 }} />4 changed</span>
+        <span>{repo.dirty
+          ? <><span className="gh-dot warn" style={{ marginRight: 4 }} />4 changed</>
+          : <><span className="gh-dot ok" style={{ marginRight: 4 }} />clean</>}</span>
       </div>
     </MacWindow>
   );
 };
 
-Object.assign(window, { TinyApp });
+Object.assign(window, { TinyApp, OpenWithSplit, RepoMonogram, editors });
