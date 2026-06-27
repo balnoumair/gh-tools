@@ -35,8 +35,12 @@ export const IPC = {
   // Editor launchers
   EDITOR_OPEN: 'editor:open',
 
-  // Reviewer
-  REVIEWER_GET_DIFF: 'reviewer:get-diff',
-  REVIEWER_SUBMIT_REVIEW: 'reviewer:submit-review',
-  REVIEWER_OPEN: 'reviewer:open',
+  // Diff
+  GITHUB_GET_PR_DIFF: 'github:get-pr-diff',
+  GIT_GET_WORKTREE_DIFF: 'git:get-worktree-diff',
+
+  // Settings
+  SETTINGS_GET: 'settings:get',
+  SETTINGS_SET: 'settings:set',
+
 } as const;

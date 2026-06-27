@@ -76,19 +76,6 @@ export interface GitOperationResult {
 
 export type EditorTarget = 'cursor' | 'claude' | 'codex' | 'zed' | 'terminal' | 'finder';
 
-// --- Reviewer Types ---
-
-export type ReviewDecision = 'approve' | 'request_changes' | 'comment';
-
-export interface PRDiffMeta {
-  base: string;
-  head: string;
-  additions: number;
-  deletions: number;
-  files: number;
-  commits: number;
-}
-
 export interface EditorLaunchResult {
   success: boolean;
   message: string;
@@ -144,4 +131,43 @@ export interface StashApplyOptions {
   repoPath: string;
   stashIndex: number;
   drop?: boolean;
+}
+
+// --- Diff types ---
+
+export interface DiffLine {
+  type: 'ctx' | 'add' | 'del';
+  old: number | null;
+  nw: number | null;
+  text: string;
+}
+
+export interface DiffHunk {
+  header: string;
+  lines: DiffLine[];
+}
+
+export interface DiffFile {
+  path: string;
+  oldPath?: string;
+  status: 'modified' | 'added' | 'deleted' | 'renamed';
+  additions: number;
+  deletions: number;
+  hunks: DiffHunk[];
+}
+
+export interface DiffResult {
+  files: DiffFile[];
+  summary: {
+    files: number;
+    additions: number;
+    deletions: number;
+  };
+  base?: string;
+  head?: string;
+}
+
+export interface WorktreeDiffResult {
+  uncommitted: DiffResult;
+  committed: DiffResult;
 }

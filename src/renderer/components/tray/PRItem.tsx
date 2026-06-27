@@ -4,9 +4,10 @@ import type { PullRequest } from '@shared/types';
 interface PRItemProps {
   pr: PullRequest;
   index: number;
+  hideRelationshipPill?: boolean;
 }
 
-export default function PRItem({ pr }: PRItemProps) {
+export default function PRItem({ pr, hideRelationshipPill }: PRItemProps) {
   const handleClick = () => {
     window.electronAPI.openExternal(pr.url);
   };
@@ -56,17 +57,19 @@ export default function PRItem({ pr }: PRItemProps) {
             {pr.title}
           </div>
 
-          <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-            <span
-              className="text-[11px] text-mac-label-tertiary px-[7px] py-[1.5px] rounded-full border"
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                borderColor: 'var(--mac-separator)',
-              }}
-            >
-              {relationshipLabel}
-            </span>
-          </div>
+          {!hideRelationshipPill && (
+            <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span
+                className="text-[11px] text-mac-label-tertiary px-[7px] py-[1.5px] rounded-full border"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  borderColor: 'var(--mac-separator)',
+                }}
+              >
+                {relationshipLabel}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </button>
