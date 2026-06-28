@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { getAuthStatus } from '../services/auth';
 import {
@@ -9,8 +9,41 @@ import {
 } from '../services/github-poller';
 import { parseUnifiedDiff } from '../services/diff-parser';
 import { IPC } from '@shared/ipc-channels';
+import type { PRReviewSubmitRequest } from '@shared/types';
 
 const execFileAsync = promisify(execFile);
+
+function ghApiJson<T>(apiPath: string, body: unknown): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('gh', ['api', apiPath, '--input', '-'], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
+    child.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        try {
+          resolve(JSON.parse(stdout) as T);
+        } catch {
+          resolve(stdout as T);
+        }
+        return;
+      }
+      reject(new Error(stderr.trim() || `gh api failed with code ${code}`));
+    });
+    child.stdin.write(JSON.stringify(body));
+    child.stdin.end();
+  });
+}
+
+const REVIEW_EVENT_MAP: Record<PRReviewSubmitRequest['event'], string> = {
+  approve: 'APPROVE',
+  request_changes: 'REQUEST_CHANGES',
+  comment: 'COMMENT',
+};
 
 /** Registers all IPC handlers used by the PR Pulse (menubar notifications) app. */
 export function registerPrIpc(): void {
@@ -39,7 +72,7 @@ export function registerPrIpc(): void {
           '--repo', repoFullName,
         ]);
         const result = parseUnifiedDiff(stdout);
-        // Inject base/head from gh pr view
+        result.patch = stdout;
         try {
           const { stdout: meta } = await execFileAsync('gh', [
             'pr', 'view', String(prNumber),
@@ -58,4 +91,49 @@ export function registerPrIpc(): void {
       }
     },
   );
+
+  ipcMain.handle(IPC.GITHUB_SUBMIT_PR_REVIEW, async (_event, request: PRReviewSubmitRequest) => {
+    try {
+      const { stdout: metaRaw } = await execFileAsync('gh', [
+        'pr', 'view', String(request.prNumber),
+        '--repo', request.repoFullName,
+        '--json', 'headRefOid',
+      ]);
+      const { headRefOid } = JSON.parse(metaRaw) as { headRefOid: string };
+
+      const payload: Record<string, unknown> = {
+        commit_id: headRefOid,
+        event: REVIEW_EVENT_MAP[request.event],
+        body: request.body?.trim() || undefined,
+        comments: request.comments.map((comment) => {
+          const item: Record<string, unknown> = {
+            path: comment.filePath,
+            body: comment.body,
+            line: comment.lineNumber,
+            side: comment.side === 'additions' ? 'RIGHT' : 'LEFT',
+          };
+          const start = comment.startLineNumber ?? comment.lineNumber;
+          if (start !== comment.lineNumber) {
+            item.start_line = start;
+            const startSide = comment.startSide ?? comment.side;
+            item.start_side = startSide === 'additions' ? 'RIGHT' : 'LEFT';
+          }
+          return item;
+        }),
+      };
+
+      if (!payload.body) delete payload.body;
+      if ((payload.comments as unknown[]).length === 0) delete payload.comments;
+
+      await ghApiJson(
+        `repos/${request.repoFullName}/pulls/${request.prNumber}/reviews`,
+        payload,
+      );
+
+      return { success: true, message: 'Review submitted' };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, message };
+    }
+  });
 }

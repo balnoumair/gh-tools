@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import type { PullRequest, GitWorktree } from '@shared/types';
 import { useSettingsPatch } from '../../hooks/use-settings-patch';
+import { useSettingsStore } from '../../stores/settings-store';
+import { prsWithoutLocalWorktree, findPRForWorktree } from '../../lib/pr-worktree';
 
 export interface RootItem {
   name: string;
@@ -31,8 +33,8 @@ const PR_STATE_COLOR: Record<PullRequest['mentionType'], string> = {
 };
 
 function WtRow({
-  w, active, onClick,
-}: { w: GitWorktree; active: boolean; onClick: () => void }) {
+  w, active, linkedPr, onClick,
+}: { w: GitWorktree; active: boolean; linkedPr?: PullRequest; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
@@ -64,6 +66,13 @@ function WtRow({
               padding: '1px 5px', borderRadius: 5,
               background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)', fontWeight: 600, flexShrink: 0,
             }}>main</span>
+          )}
+          {linkedPr && (
+            <span style={{
+              fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 9,
+              padding: '1px 5px', borderRadius: 5,
+              background: 'rgba(139,143,240,0.15)', color: '#8b8ff0', fontWeight: 600, flexShrink: 0,
+            }}>#{linkedPr.number}</span>
           )}
         </div>
         <div style={{
@@ -221,51 +230,30 @@ export function FusionSidebar({
   onAddRepo: () => void;
 }) {
   const patchSettings = useSettingsPatch();
-  const [openRoots, setOpenRoots] = useState<Record<string, boolean>>({});
-  const [prSectionsOpen, setPrSectionsOpen] = useState<Record<string, boolean>>({});
-  const [showPR, setShowPR] = useState<Record<string, boolean>>({});
-  const [settingsReady, setSettingsReady] = useState(false);
-
-  useEffect(() => {
-    void window.electronAPI.settingsGet().then((s) => {
-      setOpenRoots(s.review.openRoots);
-      setPrSectionsOpen(s.review.prSectionsOpen);
-      setShowPR(s.review.showPR);
-      setSettingsReady(true);
-    });
-  }, []);
+  const showPR = useSettingsStore((state) => state.settings.review.showPR);
+  const openRoots = useSettingsStore((state) => state.settings.review.openRoots);
+  const prSectionsOpen = useSettingsStore((state) => state.settings.review.prSectionsOpen);
+  const settingsReady = useSettingsStore((state) => state.loaded);
 
   useEffect(() => {
     if (!settingsReady) return;
-    setOpenRoots((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      for (const root of roots) {
-        if (!(root.path in next)) {
-          next[root.path] = true;
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
-  }, [roots, settingsReady]);
+    const missing: Record<string, boolean> = {};
+    for (const root of roots) {
+      if (!(root.path in openRoots)) missing[root.path] = true;
+    }
+    if (Object.keys(missing).length > 0) {
+      patchSettings({ review: { openRoots: missing } });
+    }
+  }, [roots, settingsReady, openRoots, patchSettings]);
 
   const toggleRoot = (path: string) => {
-    setOpenRoots((prev) => {
-      const nextOpen = prev[path] === false;
-      const next = { ...prev, [path]: nextOpen };
-      patchSettings({ review: { openRoots: { [path]: nextOpen } } });
-      return next;
-    });
+    const nextOpen = openRoots[path] === false;
+    patchSettings({ review: { openRoots: { [path]: nextOpen } } });
   };
 
   const togglePR = (path: string) => {
-    setPrSectionsOpen((prev) => {
-      const nextOpen = prev[path] === false;
-      const next = { ...prev, [path]: nextOpen };
-      patchSettings({ review: { prSectionsOpen: { [path]: nextOpen } } });
-      return next;
-    });
+    const nextOpen = prSectionsOpen[path] === false;
+    patchSettings({ review: { prSectionsOpen: { [path]: nextOpen } } });
   };
 
   return (
@@ -278,6 +266,7 @@ export function FusionSidebar({
           const open = openRoots[root.path] !== false;
           const prOpen = prSectionsOpen[root.path] !== false;
           const showPrSection = showPR[root.name] !== false;
+          const sidebarPrs = prsWithoutLocalWorktree(root.prs, root.worktrees);
           return (
             <div key={root.path}>
               <RootHeader
@@ -292,19 +281,20 @@ export function FusionSidebar({
                     <WtRow
                       key={w.path}
                       w={w}
+                      linkedPr={findPRForWorktree(w, root.prs, root.name) ?? undefined}
                       active={view?.type === 'wt' && view.repoPath === root.path && view.worktreePath === w.path}
                       onClick={() => onSelect({ type: 'wt', repoPath: root.path, worktreePath: w.path })}
                     />
                   ))}
-                  {showPrSection && root.prs.length > 0 && (
+                  {showPrSection && sidebarPrs.length > 0 && (
                     <SubLabel
                       label="Pull requests"
-                      count={root.prs.length}
+                      count={sidebarPrs.length}
                       open={prOpen}
                       onToggle={() => togglePR(root.path)}
                     />
                   )}
-                  {prOpen && root.prs.map((pr) => (
+                  {prOpen && sidebarPrs.map((pr) => (
                     <PRRow
                       key={pr.id}
                       pr={pr}
@@ -312,6 +302,13 @@ export function FusionSidebar({
                       onClick={() => onSelect({ type: 'pr', prId: pr.id })}
                     />
                   ))}
+                  {prOpen && sidebarPrs.length === 0 && root.prs.length > 0 && (
+                    <div style={{
+                      margin: '1px 8px', padding: '5px 9px 7px 28px',
+                      fontSize: 11, color: 'rgba(255,255,255,0.2)',
+                      fontFamily: 'var(--gh-font-mono, monospace)',
+                    }}>all PRs checked out locally</div>
+                  )}
                   {prOpen && root.prs.length === 0 && (
                     <div style={{
                       margin: '1px 8px', padding: '5px 9px 7px 28px',

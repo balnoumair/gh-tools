@@ -101,6 +101,7 @@ fragment prFields on PullRequest {
   number
   title
   url
+  headRefName
   updatedAt
   author { login avatarUrl }
   repository { nameWithOwner }
@@ -119,6 +120,7 @@ interface GqlPR {
   number: number;
   title: string;
   url: string;
+  headRefName: string;
   updatedAt: string;
   author: { login: string; avatarUrl?: string } | null;
   repository: { nameWithOwner: string };
@@ -162,6 +164,7 @@ function toPullRequest(node: GqlPR, mentionType: PullRequest['mentionType']): Pu
     title: node.title,
     url: node.url,
     repoFullName: node.repository.nameWithOwner,
+    headRefName: node.headRefName,
     author: {
       login: node.author?.login ?? 'unknown',
       avatarUrl: node.author?.avatarUrl ?? '',

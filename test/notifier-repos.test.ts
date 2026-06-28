@@ -10,6 +10,7 @@ function pr(id: number, repoFullName: string): PullRequest {
     title: `PR ${id}`,
     url: `https://github.com/${repoFullName}/pull/${id}`,
     repoFullName,
+    headRefName: `branch-${id}`,
     author: { login: 'dev', avatarUrl: '' },
     mentionType: 'review_requested',
     ciStatus: 'success',

@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { DEFAULT_SETTINGS, type NotifierSettings } from '@shared/settings';
+import { useCallback, useEffect } from 'react';
+import { type NotifierSettings } from '@shared/settings';
+import { useSettingsStore } from '../stores/settings-store';
 
-/** Loads notifier settings from ~/.gh-tools; refreshes when the window regains focus. */
+/** Notifier settings from the shared store; reloads from disk when the window regains focus. */
 export function useNotifierSettings(): NotifierSettings {
-  const [notifier, setNotifier] = useState<NotifierSettings>(DEFAULT_SETTINGS.notifier);
+  const notifier = useSettingsStore((state) => state.settings.notifier);
+  const load = useSettingsStore((state) => state.load);
 
   const reload = useCallback(() => {
-    void window.electronAPI.settingsGet().then((s) => setNotifier(s.notifier));
-  }, []);
+    void load();
+  }, [load]);
 
   useEffect(() => {
     reload();

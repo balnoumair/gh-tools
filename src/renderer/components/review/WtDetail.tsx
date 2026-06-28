@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import type { GitWorktree, WorktreeDiffResult } from '@shared/types';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { GitWorktree, PullRequest, WorktreeDiffResult } from '@shared/types';
 import type { EditorTarget } from '@shared/types';
 import { FileDiff, DiffSectionBand } from './FileDiff';
+import { DiffLoadingSkeleton } from './DiffLoadingSkeleton';
+import { useSettingsStore } from '../../stores/settings-store';
+import { useDiffCacheStore } from '../../stores/diff-cache-store';
 
 const EDITORS: { id: EditorTarget; label: string }[] = [
   { id: 'cursor', label: 'Cursor' },
@@ -11,6 +14,88 @@ const EDITORS: { id: EditorTarget; label: string }[] = [
   { id: 'terminal', label: 'Terminal' },
   { id: 'finder', label: 'Finder' },
 ];
+
+type DiffTab = 'uncommitted' | 'committed';
+
+function IconCommit({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function IconPush({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </svg>
+  );
+}
+
+function IconPull({ size = 12 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </svg>
+  );
+}
+
+function DiffTabBar({
+  active, uncommittedCount, committedCount, onChange,
+}: {
+  active: DiffTab;
+  uncommittedCount: number;
+  committedCount: number;
+  onChange: (tab: DiffTab) => void;
+}) {
+  const tabs: { id: DiffTab; label: string; count: number; tone?: string }[] = [
+    { id: 'uncommitted', label: 'Uncommitted', count: uncommittedCount, tone: '#d9c98a' },
+    { id: 'committed', label: 'Committed', count: committedCount },
+  ];
+
+  return (
+    <div style={{
+      display: 'flex', gap: 4, padding: '10px 14px',
+      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      background: 'rgba(23,24,28,1)',
+      position: 'sticky', top: 0, zIndex: 2,
+    }}>
+      {tabs.map((tab) => {
+        const selected = active === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            style={{
+              height: 28, padding: '0 11px', borderRadius: 7,
+              fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 12, fontWeight: 600,
+              display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+              background: selected ? 'rgba(139,143,240,0.15)' : 'rgba(255,255,255,0.03)',
+              color: selected ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.55)',
+              border: selected ? '1px solid rgba(139,143,240,0.40)' : '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            {tab.tone && (
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: tab.tone, flexShrink: 0 }} />
+            )}
+            {tab.label}
+            <span style={{
+              fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 10.5, fontWeight: 500,
+              color: selected ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.3)',
+            }}>{tab.count}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function ActionBtn({
   children, primary, onClick, disabled,
@@ -38,30 +123,66 @@ function ActionBtn({
 }
 
 export function WtDetail({
-  worktree, repoPath, linkedPrNum,
+  worktree, repoPath, linkedPr,
   onCreateWorktree, onRemoveWorktree,
 }: {
   worktree: GitWorktree;
   repoPath: string;
-  linkedPrNum?: number;
+  linkedPr?: PullRequest;
   onCreateWorktree: (branch: string) => void;
   onRemoveWorktree: () => void;
 }) {
-  const [diff, setDiff] = useState<WorktreeDiffResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [diff, setDiff] = useState<WorktreeDiffResult | null>(
+    () => useDiffCacheStore.getState().getWorktreeDiff(worktree.path),
+  );
+  const [loading, setLoading] = useState(() => !useDiffCacheStore.getState().getWorktreeDiff(worktree.path));
+  const [diffTab, setDiffTab] = useState<DiffTab>('uncommitted');
   const [menuOpen, setMenuOpen] = useState(false);
   const [composer, setComposer] = useState<'branch' | 'worktree' | null>(null);
   const [newName, setNewName] = useState('');
+  const editorPrefs = useSettingsStore((state) => state.settings.review.editors);
+  const visibleEditors = useMemo(
+    () => EDITORS.filter((ed) => editorPrefs[ed.id]),
+    [editorPrefs],
+  );
 
   const folderName = worktree.path.split('/').pop() ?? '';
 
   useEffect(() => {
+    const cached = useDiffCacheStore.getState().getWorktreeDiff(worktree.path);
+    if (cached) {
+      setDiff(cached);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
     setLoading(true);
-    window.electronAPI.getWorktreeDiff(worktree.path)
-      .then(setDiff)
-      .catch(() => setDiff(null))
-      .finally(() => setLoading(false));
+    void useDiffCacheStore.getState().loadWorktreeDiff(worktree.path)
+      .then((result) => {
+        if (!cancelled) {
+          setDiff(result);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDiff(null);
+          setLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
   }, [worktree.path]);
+
+  const uncommittedCount = diff?.uncommitted.files.length ?? 0;
+  const committedCount = diff?.committed.files.length ?? 0;
+  const showDiffTabs = !loading && uncommittedCount > 0 && committedCount > 0;
+
+  useEffect(() => {
+    if (uncommittedCount > 0) setDiffTab('uncommitted');
+    else if (committedCount > 0) setDiffTab('committed');
+  }, [worktree.path, uncommittedCount, committedCount]);
 
   const handleEditor = (id: EditorTarget) => {
     window.electronAPI.openInEditor(id, worktree.path).catch(() => {});
@@ -120,18 +241,26 @@ export function WtDetail({
               background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)', fontWeight: 600,
             }}>primary</span>
           )}
-          {linkedPrNum && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 12, color: '#8b8ff0',
-            }}>
+          {linkedPr && (
+            <button
+              type="button"
+              title="Open on GitHub"
+              onClick={() => window.electronAPI.openExternal(linkedPr.url)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 12, color: '#8b8ff0',
+                background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#a8abff'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#8b8ff0'; }}
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="18" cy="18" r="3" /><circle cx="6" cy="6" r="3" />
                 <path d="M13 6h3a2 2 0 0 1 2 2v7" /><line x1="6" y1="9" x2="6" y2="21" />
               </svg>
-              #{linkedPrNum}
-            </span>
+              #{linkedPr.number}
+            </button>
           )}
         </div>
 
@@ -164,7 +293,7 @@ export function WtDetail({
             background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.09)',
             borderRadius: 8, padding: '3px 4px',
           }}>
-            {EDITORS.map((ed) => (
+            {visibleEditors.map((ed) => (
               <button key={ed.id} onClick={() => handleEditor(ed.id)} style={{
                 height: 24, padding: '0 9px', borderRadius: 5,
                 fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 11, fontWeight: 500,
@@ -183,29 +312,16 @@ export function WtDetail({
 
           {worktree.dirty && (
             <ActionBtn primary>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="4" /><line x1="1.05" y1="12" x2="7" y2="12" />
-                <line x1="17.01" y1="12" x2="22.96" y2="12" />
-              </svg>
+              <IconCommit />
               Commit
             </ActionBtn>
           )}
           <ActionBtn>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" />
-              <polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" />
-            </svg>
+            <IconPush />
             Push
           </ActionBtn>
           <ActionBtn>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="8 17 3 22 3 17" />
-              <line x1="20" y1="2" x2="3" y2="22" />
-              <polyline points="20 7 20 2 15 2" />
-            </svg>
+            <IconPull />
             Pull
           </ActionBtn>
           {worktree.behind > 0 && (
@@ -305,46 +421,51 @@ export function WtDetail({
       {/* Diff */}
       <div style={{ flex: 1, overflowY: 'auto', background: 'rgba(23,24,28,1)' }}>
         {loading ? (
-          <div style={{
-            padding: '24px 18px', textAlign: 'center',
-            fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 12, color: 'rgba(255,255,255,0.25)',
-          }}>Loading diff…</div>
+          <DiffLoadingSkeleton label="Loading worktree diff" />
         ) : diff ? (
           <>
-            {diff.uncommitted.files.length > 0 && (
-              <>
-                <DiffSectionBand
-                  icon={<span style={{ width: 7, height: 7, borderRadius: '50%', background: '#d9c98a', display: 'block' }} />}
-                  label="Uncommitted · working tree"
-                  count={diff.uncommitted.files.length}
-                  tone="#d9c98a"
-                />
-                {diff.uncommitted.files.map((f, i) => <FileDiff key={`u${i}`} file={f} />)}
-              </>
+            {showDiffTabs && (
+              <DiffTabBar
+                active={diffTab}
+                uncommittedCount={uncommittedCount}
+                committedCount={committedCount}
+                onChange={setDiffTab}
+              />
             )}
-            {diff.committed.files.length > 0 && (
-              <>
-                <DiffSectionBand
-                  icon={
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="4" /><line x1="1.05" y1="12" x2="7" y2="12" />
-                      <line x1="17.01" y1="12" x2="22.96" y2="12" />
-                    </svg>
-                  }
-                  label="Committed · ahead of main"
-                  count={diff.committed.files.length}
-                />
-                {diff.committed.files.map((f, i) => <FileDiff key={`c${i}`} file={f} />)}
-              </>
+            {!showDiffTabs && uncommittedCount > 0 && (
+              <DiffSectionBand
+                icon={<span style={{ width: 7, height: 7, borderRadius: '50%', background: '#d9c98a', display: 'block' }} />}
+                label="Uncommitted · working tree"
+                count={uncommittedCount}
+                tone="#d9c98a"
+              />
             )}
-            {diff.uncommitted.files.length === 0 && diff.committed.files.length === 0 && (
+            {(!showDiffTabs || diffTab === 'uncommitted') && diff.uncommitted.files.map((f, i) => (
+              <FileDiff key={`u${i}`} file={f} />
+            ))}
+            {!showDiffTabs && committedCount > 0 && (
+              <DiffSectionBand
+                icon={
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="4" /><line x1="1.05" y1="12" x2="7" y2="12" />
+                    <line x1="17.01" y1="12" x2="22.96" y2="12" />
+                  </svg>
+                }
+                label="Committed · ahead of main"
+                count={committedCount}
+              />
+            )}
+            {(!showDiffTabs || diffTab === 'committed') && diff.committed.files.map((f, i) => (
+              <FileDiff key={`c${i}`} file={f} />
+            ))}
+            {uncommittedCount === 0 && committedCount === 0 && (
               <div style={{
                 padding: '24px 18px', textAlign: 'center',
                 fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 12, color: 'rgba(255,255,255,0.25)',
               }}>Working tree clean — up to date with main.</div>
             )}
-            {(diff.uncommitted.files.length > 0 || diff.committed.files.length > 0) && (
+            {(uncommittedCount > 0 || committedCount > 0) && (
               <div style={{
                 padding: '14px 18px', textAlign: 'center', fontSize: 11,
                 color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--gh-font-mono, monospace)',

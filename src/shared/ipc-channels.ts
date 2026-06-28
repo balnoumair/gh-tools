@@ -37,6 +37,7 @@ export const IPC = {
 
   // Diff
   GITHUB_GET_PR_DIFF: 'github:get-pr-diff',
+  GITHUB_SUBMIT_PR_REVIEW: 'github:submit-pr-review',
   GIT_GET_WORKTREE_DIFF: 'git:get-worktree-diff',
 
   // Settings

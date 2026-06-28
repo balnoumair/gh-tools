@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { usePRStore } from '../stores/pr-store';
+import { useSettingsStore } from '../stores/settings-store';
 import TrayHeader from '../components/tray/TrayHeader';
 import PRList from '../components/tray/PRList';
 import AuthPrompt from '../components/tray/AuthPrompt';
@@ -10,6 +11,7 @@ export default function TrayApp() {
 
   useEffect(() => {
     checkAuth().then(() => fetchPRs());
+    void useSettingsStore.getState().load();
 
     const unsubscribe = window.electronAPI.onPRsUpdated((prs) => {
       setPRs(prs);

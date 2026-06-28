@@ -10,6 +10,7 @@ const makePR = (overrides: Partial<PullRequest> = {}): PullRequest => ({
   title: 'Improve tray redesign',
   url: 'https://github.com/org/repo/pull/42',
   repoFullName: 'org/repo',
+  headRefName: 'feature-branch',
   author: { login: 'octocat', avatarUrl: 'https://example.com/avatar.png' },
   isDraft: false,
   reviewDecision: null,

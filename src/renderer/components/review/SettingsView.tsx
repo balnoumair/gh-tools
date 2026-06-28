@@ -1,14 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  DEFAULT_SETTINGS,
   GIT_COMMAND_DEFS,
-  mergeSettings,
   uniqueNotifierRepos,
   type AppSettings,
   type GitCommandId,
   type PollInterval,
 } from '@shared/settings';
 import { usePRStore } from '../../stores/pr-store';
+import { useSettingsStore } from '../../stores/settings-store';
 
 type SettingsTab = 'notifier' | 'review';
 
@@ -219,46 +218,19 @@ function RepoGlyph({ name }: { name: string }) {
 export function SettingsView() {
   const { prs } = usePRStore();
   const [tab, setTab] = useState<SettingsTab>('notifier');
-  const [s, setS] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const s = useSettingsStore((state) => state.settings);
+  const patch = useSettingsStore((state) => state.patch);
   const [localRepos, setLocalRepos] = useState<Array<{ name: string; path: string }>>([]);
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingPatch = useRef<Partial<AppSettings>>({});
 
-  const flushSave = useCallback(() => {
-    const patch = pendingPatch.current;
-    pendingPatch.current = {};
-    if (Object.keys(patch).length > 0) {
-      void window.electronAPI.settingsSet(patch);
-    }
-  }, []);
-
-  const queueSave = useCallback((patch: Partial<AppSettings>) => {
-    pendingPatch.current = mergeSettings(
-      mergeSettings(DEFAULT_SETTINGS, pendingPatch.current),
-      patch,
-    );
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(flushSave, 350);
-  }, [flushSave]);
-
-  const update = useCallback((patch: Partial<AppSettings>) => {
-    setS((prev) => {
-      const next = mergeSettings(prev, patch);
-      queueSave(patch);
-      return next;
-    });
-  }, [queueSave]);
+  const update = useCallback((partial: Partial<AppSettings>) => {
+    patch(partial);
+  }, [patch]);
 
   useEffect(() => {
-    void window.electronAPI.settingsGet().then(setS);
     void window.electronAPI.gitLoadRecents().then((recents) => {
       setLocalRepos(recents.map((r) => ({ name: r.name, path: r.path })));
     });
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      flushSave();
-    };
-  }, [flushSave]);
+  }, []);
 
   const enabledEditorCount = EDITORS.filter((e) => s.review.editors[e.key]).length;
   const notifierRepos = useMemo(() => uniqueNotifierRepos(prs), [prs]);

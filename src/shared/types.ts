@@ -6,6 +6,7 @@ export interface PullRequest {
   title: string;
   url: string;
   repoFullName: string;
+  headRefName: string;
   author: {
     login: string;
     avatarUrl: string;
@@ -165,6 +166,30 @@ export interface DiffResult {
   };
   base?: string;
   head?: string;
+  /** Raw unified diff text for @pierre/diffs rendering */
+  patch?: string;
+  error?: string;
+}
+
+export type PRReviewEvent = 'approve' | 'request_changes' | 'comment';
+
+export interface PRReviewCommentDraft {
+  id: string;
+  filePath: string;
+  side: 'additions' | 'deletions';
+  lineNumber: number;
+  /** Inclusive start of a multi-line comment (defaults to lineNumber). */
+  startLineNumber?: number;
+  startSide?: 'additions' | 'deletions';
+  body: string;
+}
+
+export interface PRReviewSubmitRequest {
+  prNumber: number;
+  repoFullName: string;
+  event: PRReviewEvent;
+  body?: string;
+  comments: PRReviewCommentDraft[];
 }
 
 export interface WorktreeDiffResult {

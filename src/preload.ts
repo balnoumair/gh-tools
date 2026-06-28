@@ -20,6 +20,7 @@ import type {
   WorktreeCommitOptions,
   DiffResult,
   WorktreeDiffResult,
+  PRReviewSubmitRequest,
 } from '@shared/types';
 
 const api = {
@@ -101,6 +102,8 @@ const api = {
   // Diffs
   getPRDiff: (prNumber: number, repoFullName: string): Promise<DiffResult> =>
     ipcRenderer.invoke(IPC.GITHUB_GET_PR_DIFF, prNumber, repoFullName),
+  submitPRReview: (request: PRReviewSubmitRequest): Promise<{ success: boolean; message: string }> =>
+    ipcRenderer.invoke(IPC.GITHUB_SUBMIT_PR_REVIEW, request),
   getWorktreeDiff: (worktreePath: string): Promise<WorktreeDiffResult> =>
     ipcRenderer.invoke(IPC.GIT_GET_WORKTREE_DIFF, worktreePath),
 

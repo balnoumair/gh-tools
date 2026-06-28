@@ -9,6 +9,7 @@ describe('shared type fixtures', () => {
       title: 'Improve polling behavior',
       url: 'https://github.com/org/repo/pull/7',
       repoFullName: 'org/repo',
+      headRefName: 'feature-branch',
       author: {
         login: 'octocat',
         avatarUrl: 'https://example.com/avatar.png',
