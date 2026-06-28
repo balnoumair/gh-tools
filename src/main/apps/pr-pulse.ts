@@ -1,10 +1,14 @@
-import { app, nativeImage } from 'electron';
+import { app } from 'electron';
 import path from 'node:path';
 import { createPopoverWindow, getPopoverWindow } from '../windows';
 import { createTray } from '../tray';
+import { createDockIcon, hideDock } from '../dock-icon';
 import { getToken } from '../services/auth';
 import { startPolling, stopPolling, setOnPRsUpdated } from '../services/github-poller';
 import { loadShellPath } from '../services/editor-launcher';
+import { loadSettings } from '../services/settings-store';
+import { registerAppIpc } from '../ipc/app-ipc';
+import { registerSettingsIpc } from '../ipc/settings-ipc';
 import { registerPrIpc } from '../ipc/pr-ipc';
 import { registerGitIpc } from '../ipc/git-ipc';
 import {
@@ -55,9 +59,11 @@ export function runPrPulseApp(): void {
   app.setName(meta.productName);
 
   if (process.platform === 'darwin') {
-    const iconPath = path.join(__dirname, '../../assets/pr-pulse/icon.png');
-    app.dock?.setIcon(nativeImage.createFromPath(iconPath));
-    app.dock?.hide();
+    const dockIcon = createDockIcon();
+    if (!dockIcon.isEmpty()) {
+      app.dock?.setIcon(dockIcon);
+    }
+    hideDock();
   }
 
   if (process.defaultApp) {
@@ -81,11 +87,14 @@ export function runPrPulseApp(): void {
     handleDeepLink(url);
   });
 
+  registerAppIpc();
+  registerSettingsIpc();
   registerPrIpc();
   registerGitIpc();
 
   app.on('ready', async () => {
     appIsReady = true;
+    await loadSettings();
     await loadShellPath();
 
     createPopoverWindow();

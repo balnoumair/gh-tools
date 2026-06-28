@@ -93,7 +93,21 @@ body {
 }
 
 
-/* --- Backdrop grain (very subtle) --- */
+/* Scrollbar inside CC-themed surfaces (popover / review app) */
+.gh-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.gh-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.gh-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.gh-scroll::-webkit-scrollbar-track { background: transparent; }
+
 .bg-app-canvas {
   background-color: var(--mac-bg-content);
   background-image:

@@ -103,6 +103,12 @@ const api = {
     ipcRenderer.invoke(IPC.GITHUB_GET_PR_DIFF, prNumber, repoFullName),
   getWorktreeDiff: (worktreePath: string): Promise<WorktreeDiffResult> =>
     ipcRenderer.invoke(IPC.GIT_GET_WORKTREE_DIFF, worktreePath),
+
+  // Settings (~/.gh-tools)
+  settingsGet: (): Promise<import('@shared/settings').AppSettings> =>
+    ipcRenderer.invoke(IPC.SETTINGS_GET),
+  settingsSet: (patch: Partial<import('@shared/settings').AppSettings>): Promise<import('@shared/settings').AppSettings> =>
+    ipcRenderer.invoke(IPC.SETTINGS_SET, patch),
 };
 
 export type ElectronAPI = typeof api;

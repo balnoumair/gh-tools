@@ -1,7 +1,6 @@
-import { ipcMain, shell } from 'electron';
+import { ipcMain } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { setFullWindowSize } from '../windows';
 import { parseUnifiedDiff } from '../services/diff-parser';
 
 const execFileAsync = promisify(execFile);
@@ -30,14 +29,6 @@ import type {
 
 /** Registers all IPC handlers used by the Git Manager (project management) app. */
 export function registerGitIpc(): void {
-  ipcMain.handle(IPC.APP_OPEN_EXTERNAL, async (_event, url: string) => {
-    shell.openExternal(url);
-  });
-
-  ipcMain.handle(IPC.APP_SET_WINDOW_SIZE, async (_event, width: number, height: number) => {
-    setFullWindowSize(width, height);
-  });
-
   ipcMain.handle(
     IPC.GIT_LOAD_RECENTS,
     async (_event, legacy?: Array<{ path: string; name: string }>) => {

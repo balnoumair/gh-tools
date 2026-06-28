@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { PullRequest, GitWorktree } from '@shared/types';
+import { useSettingsPatch } from '../../hooks/use-settings-patch';
 
 export interface RootItem {
   name: string;
@@ -219,15 +220,53 @@ export function FusionSidebar({
   onNewWorktree: (rootPath: string) => void;
   onAddRepo: () => void;
 }) {
-  const [openRoots, setOpenRoots] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(roots.map((r) => [r.path, true])),
-  );
-  const [prHidden, setPrHidden] = useState<Record<string, boolean>>({});
+  const patchSettings = useSettingsPatch();
+  const [openRoots, setOpenRoots] = useState<Record<string, boolean>>({});
+  const [prSectionsOpen, setPrSectionsOpen] = useState<Record<string, boolean>>({});
+  const [showPR, setShowPR] = useState<Record<string, boolean>>({});
+  const [settingsReady, setSettingsReady] = useState(false);
 
-  const toggleRoot = (path: string) =>
-    setOpenRoots((o) => ({ ...o, [path]: !o[path] }));
-  const togglePR = (path: string) =>
-    setPrHidden((h) => ({ ...h, [path]: !h[path] }));
+  useEffect(() => {
+    void window.electronAPI.settingsGet().then((s) => {
+      setOpenRoots(s.review.openRoots);
+      setPrSectionsOpen(s.review.prSectionsOpen);
+      setShowPR(s.review.showPR);
+      setSettingsReady(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!settingsReady) return;
+    setOpenRoots((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const root of roots) {
+        if (!(root.path in next)) {
+          next[root.path] = true;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [roots, settingsReady]);
+
+  const toggleRoot = (path: string) => {
+    setOpenRoots((prev) => {
+      const nextOpen = prev[path] === false;
+      const next = { ...prev, [path]: nextOpen };
+      patchSettings({ review: { openRoots: { [path]: nextOpen } } });
+      return next;
+    });
+  };
+
+  const togglePR = (path: string) => {
+    setPrSectionsOpen((prev) => {
+      const nextOpen = prev[path] === false;
+      const next = { ...prev, [path]: nextOpen };
+      patchSettings({ review: { prSectionsOpen: { [path]: nextOpen } } });
+      return next;
+    });
+  };
 
   return (
     <div style={{
@@ -237,7 +276,8 @@ export function FusionSidebar({
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
         {roots.map((root) => {
           const open = openRoots[root.path] !== false;
-          const prOpen = !prHidden[root.path];
+          const prOpen = prSectionsOpen[root.path] !== false;
+          const showPrSection = showPR[root.name] !== false;
           return (
             <div key={root.path}>
               <RootHeader
@@ -256,7 +296,7 @@ export function FusionSidebar({
                       onClick={() => onSelect({ type: 'wt', repoPath: root.path, worktreePath: w.path })}
                     />
                   ))}
-                  {root.prs.length > 0 && (
+                  {showPrSection && root.prs.length > 0 && (
                     <SubLabel
                       label="Pull requests"
                       count={root.prs.length}

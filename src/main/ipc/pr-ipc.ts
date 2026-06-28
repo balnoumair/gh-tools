@@ -1,4 +1,4 @@
-import { ipcMain, shell } from 'electron';
+import { ipcMain } from 'electron';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { getAuthStatus } from '../services/auth';
@@ -28,10 +28,6 @@ export function registerPrIpc(): void {
 
   ipcMain.handle(IPC.GITHUB_SET_POLL_INTERVAL, async (_event, minutes: number) => {
     setPollInterval(minutes);
-  });
-
-  ipcMain.handle(IPC.APP_OPEN_EXTERNAL, async (_event, url: string) => {
-    shell.openExternal(url);
   });
 
   ipcMain.handle(
