@@ -11,21 +11,33 @@ let lastPRIds: Set<number> = new Set();
 let cachedPRs: PullRequest[] = [];
 let onPRsUpdated: ((prs: PullRequest[]) => void) | null = null;
 let pollIntervalMs = 10 * 60 * 1000; // 10 minutes default
+let pollingEnabled = true;
+
+export function setPollingEnabled(enabled: boolean): void {
+  pollingEnabled = enabled;
+  if (!enabled) {
+    stopPolling();
+  }
+}
+
+export function setPollIntervalMs(ms: number): void {
+  pollIntervalMs = Math.max(30_000, ms);
+  if (pollInterval && pollingEnabled) {
+    stopPolling();
+    void startPolling();
+  }
+}
 
 export function setOnPRsUpdated(callback: (prs: PullRequest[]) => void): void {
   onPRsUpdated = callback;
 }
 
 export function setPollInterval(minutes: number): void {
-  const clamped = Math.max(1, Math.min(60, minutes));
-  pollIntervalMs = clamped * 60 * 1000;
-  if (pollInterval) {
-    stopPolling();
-    startPolling();
-  }
+  setPollIntervalMs(Math.max(1, Math.min(60, minutes)) * 60 * 1000);
 }
 
 export async function startPolling(): Promise<void> {
+  if (!pollingEnabled) return;
   await refreshPRs();
   pollInterval = setInterval(() => refreshPRs(), pollIntervalMs);
 }
@@ -89,6 +101,7 @@ fragment prFields on PullRequest {
   number
   title
   url
+  headRefName
   updatedAt
   author { login avatarUrl }
   repository { nameWithOwner }
@@ -107,6 +120,7 @@ interface GqlPR {
   number: number;
   title: string;
   url: string;
+  headRefName: string;
   updatedAt: string;
   author: { login: string; avatarUrl?: string } | null;
   repository: { nameWithOwner: string };
@@ -150,6 +164,7 @@ function toPullRequest(node: GqlPR, mentionType: PullRequest['mentionType']): Pu
     title: node.title,
     url: node.url,
     repoFullName: node.repository.nameWithOwner,
+    headRefName: node.headRefName,
     author: {
       login: node.author?.login ?? 'unknown',
       avatarUrl: node.author?.avatarUrl ?? '',

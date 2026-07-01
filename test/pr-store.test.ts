@@ -8,6 +8,7 @@ const makePR = (id: number): PullRequest => ({
   title: `PR ${id}`,
   url: `https://github.com/org/repo/pull/${id}`,
   repoFullName: 'org/repo',
+  headRefName: 'feature-branch',
   author: { login: 'octocat', avatarUrl: '' },
   ciStatus: 'unknown',
   updatedAt: new Date().toISOString(),

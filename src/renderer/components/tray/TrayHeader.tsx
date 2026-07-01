@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { usePRStore } from '../../stores/pr-store';
+import { filterNotifierPRs } from './pr-visibility';
+import { useNotifierSettings } from '../../hooks/use-notifier-settings';
 
 function GitPRIcon({ size = 14 }: { size?: number }) {
   return (
@@ -27,36 +29,40 @@ function RefreshIcon({ size = 14, spinning }: { size?: number; spinning?: boolea
 
 export default function TrayHeader() {
   const { prs, isRefreshing, forceRefresh } = usePRStore();
+  const notifier = useNotifierSettings();
+  const listedCount = useMemo(
+    () => filterNotifierPRs(prs, notifier).length,
+    [prs, notifier],
+  );
 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 9,
       padding: '12px 13px 10px',
     }}>
-      {/* CCMenuMark — indigo rounded square with PR icon */}
       <span style={{
         width: 20, height: 20, borderRadius: 6,
-        background: 'rgba(139,143,240,0.15)',
-        border: '1px solid rgba(139,143,240,0.40)',
+        background: 'var(--cc-accent-soft)',
+        border: '1px solid var(--cc-accent-line)',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        color: '#8b8ff0', flexShrink: 0,
+        color: 'var(--cc-accent)', flexShrink: 0,
       }}>
         <GitPRIcon size={12} />
       </span>
 
       <span style={{
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: 13.5, fontWeight: 600, color: 'rgba(255,255,255,0.92)',
+        fontFamily: 'inherit',
+        fontSize: 13.5, fontWeight: 600, color: 'var(--gh-fg-1)',
         letterSpacing: '-0.01em',
       }}>
         Pull requests
       </span>
 
       <span style={{
-        fontFamily: 'var(--gh-font-mono, monospace)',
-        fontSize: 11, color: 'rgba(255,255,255,0.3)',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 11, color: 'var(--gh-fg-4)',
       }}>
-        {prs.length}
+        {listedCount}
       </span>
 
       <button
@@ -64,7 +70,7 @@ export default function TrayHeader() {
         disabled={isRefreshing}
         style={{
           marginLeft: 'auto', width: 26, height: 26, borderRadius: 7,
-          color: 'rgba(255,255,255,0.4)', background: 'transparent', border: 'none',
+          color: 'var(--gh-fg-3)', background: 'transparent', border: 'none',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', opacity: isRefreshing ? 0.4 : 1,
         }}

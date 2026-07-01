@@ -1,11 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { repoFromRendererSearchParams } from '@shared/deep-link';
 import { usePRStore } from '../stores/pr-store';
+import { useSettingsStore } from '../stores/settings-store';
+import { useDiffCacheStore } from '../stores/diff-cache-store';
 import { FusionSidebar, type RootItem, type ViewState } from '../components/review/FusionSidebar';
 import { PRDetail } from '../components/review/PRDetail';
 import { WtDetail } from '../components/review/WtDetail';
 import { SettingsView } from '../components/review/SettingsView';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { findWorktreeForPR, findPRForWorktree } from '../lib/pr-worktree';
 import type { GitRepoStatus, GitRepo } from '@shared/types';
+import { CC_THEME } from '../theme/cc-theme';
 
 // Indigo PR icon for title bar
 function PRIcon({ size = 11 }: { size?: number }) {
@@ -29,28 +34,6 @@ function RefreshIcon({ size = 14, spinning }: { size?: number; spinning?: boolea
     </svg>
   );
 }
-
-const CC_THEME: React.CSSProperties = {
-  '--gh-bg-0': '#0a0b0d',
-  '--gh-bg-1': '#17181c',
-  '--gh-bg-2': '#101116',
-  '--gh-bg-3': '#1e2026',
-  '--gh-bg-4': '#23252c',
-  '--gh-line-1': 'rgba(255,255,255,0.05)',
-  '--gh-line-2': 'rgba(255,255,255,0.09)',
-  '--gh-line-3': 'rgba(255,255,255,0.14)',
-  '--gh-fg-1': '#ECEDEF',
-  '--gh-fg-2': '#A4A9B2',
-  '--gh-fg-3': '#71767E',
-  '--gh-fg-4': '#4B505A',
-  '--gh-success': '#6fcf97',
-  '--gh-danger': '#e98b8b',
-  '--gh-warn': '#d9c98a',
-  '--gh-info': '#8fa6e6',
-  '--cc-accent': '#8b8ff0',
-  '--cc-accent-soft': 'rgba(139,143,240,0.15)',
-  '--cc-accent-line': 'rgba(139,143,240,0.40)',
-} as React.CSSProperties;
 
 export default function FullApp() {
   const { prs, fetchPRs, forceRefresh, isRefreshing } = usePRStore();
@@ -117,6 +100,10 @@ export default function FullApp() {
   }, [fetchPRs]);
 
   useEffect(() => {
+    void useSettingsStore.getState().load();
+  }, []);
+
+  useEffect(() => {
     loadRoots();
   }, [loadRoots]);
 
@@ -138,25 +125,29 @@ export default function FullApp() {
   const currentRoot = view?.type === 'wt' ? roots.find((r) => r.path === view.repoPath) ?? null : null;
   const currentWt = currentRoot?.worktrees.find((w) => w.path === (view as { type: 'wt'; worktreePath: string }).worktreePath) ?? null;
 
-  const prHasWorktree = currentPR
-    ? roots.some((r) =>
-        r.worktrees.some((w) => w.branch === currentPR.repoFullName.split('/').pop()),
-      )
-    : false;
+  const prWorktree = currentPR ? findWorktreeForPR(currentPR, roots) : null;
+  const prHasWorktree = prWorktree !== null;
 
   const handleCheckout = () => {
     if (!currentPR) return;
-    // Create worktree for the PR's head branch — use git create worktree IPC
+    if (prWorktree) {
+      setView({ type: 'wt', repoPath: prWorktree.repoPath, worktreePath: prWorktree.worktreePath });
+      return;
+    }
+    // Create worktree for the PR's head branch
     const repoName = currentPR.repoFullName.split('/').pop() ?? '';
     const root = roots.find((r) => r.name === repoName);
     if (!root) return;
-    // Use the PR branch as the worktree branch (this is a stub; real impl would fetch the branch name)
-    const branch = `pr/${currentPR.number}`;
-    const targetPath = `${root.path}-${branch.replace('/', '-')}`;
+    const branch = currentPR.headRefName || `pr/${currentPR.number}`;
+    const targetPath = `${root.path}-${branch.replace(/\//g, '-')}`;
     window.electronAPI.gitCreateWorktree({ repoPath: root.path, branch, targetPath })
       .then(() => loadRoots())
       .catch(() => {});
   };
+
+  const linkedPrForWt = currentWt && currentRoot
+    ? findPRForWorktree(currentWt, prs, currentRoot.name)
+    : null;
 
   const handleNewWorktree = (rootPath: string) => {
     const root = roots.find((r) => r.path === rootPath);
@@ -223,7 +214,11 @@ export default function FullApp() {
         } as React.CSSProperties}>
           <button
             title="Refresh"
-            onClick={() => { void forceRefresh(); void loadRoots(); }}
+            onClick={() => {
+              useDiffCacheStore.getState().clearPRDiffs();
+              void forceRefresh();
+              void loadRoots();
+            }}
             style={{
               width: 30, height: 30, borderRadius: 8, color: 'rgba(255,255,255,0.4)',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -236,7 +231,13 @@ export default function FullApp() {
           </button>
           <button
             title="Settings"
-            onClick={() => setShowSettings((s) => !s)}
+            onClick={() => {
+              if (showSettings) {
+                void useSettingsStore.getState().flush().finally(() => setShowSettings(false));
+              } else {
+                setShowSettings(true);
+              }
+            }}
             style={{
               width: 30, height: 30, borderRadius: 8,
               color: showSettings ? '#8b8ff0' : 'rgba(255,255,255,0.4)',
@@ -271,15 +272,18 @@ export default function FullApp() {
           {showSettings ? (
             <SettingsView />
           ) : view?.type === 'pr' && currentPR ? (
-            <PRDetail
-              pr={currentPR}
-              hasWorktree={prHasWorktree}
-              onCheckout={handleCheckout}
-            />
+            <ErrorBoundary label="Could not open pull request">
+              <PRDetail
+                pr={currentPR}
+                hasWorktree={prHasWorktree}
+                onCheckout={handleCheckout}
+              />
+            </ErrorBoundary>
           ) : view?.type === 'wt' && currentWt && currentRoot ? (
             <WtDetail
               worktree={currentWt}
               repoPath={currentRoot.path}
+              linkedPr={linkedPrForWt ?? undefined}
               onCreateWorktree={(branch) => {
                 const targetPath = `${currentRoot.path}-${branch.replace('/', '-')}`;
                 window.electronAPI.gitCreateWorktree({ repoPath: currentRoot.path, branch, targetPath })

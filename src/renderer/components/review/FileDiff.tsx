@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import type { DiffFile, DiffLine as DiffLineData } from '@shared/types';
+import type { DiffFile, DiffLine as DiffLineData, PRReviewCommentDraft } from '@shared/types';
+import type { ReviewComposeTarget } from '../../stores/pr-review-store';
+
+export type FileDiffReviewProps = {
+  comments: PRReviewCommentDraft[];
+  composing: ReviewComposeTarget | null;
+  onLineClick: (side: 'additions' | 'deletions', lineNumber: number) => void;
+  onRemoveComment: (commentId: string) => void;
+};
 
 const REV = {
   addFg: '#7fd49a', addBg: 'rgba(110,196,138,0.10)', addGutter: 'rgba(110,196,138,0.16)',
@@ -14,38 +22,130 @@ const STATUS_GLYPH: Record<DiffFile['status'], { ch: string; tone: string }> = {
   renamed:  { ch: 'R', tone: '#8fa6e6' },
 };
 
-function DiffLine({ ln }: { ln: DiffLineData }) {
+function LineComment({
+  body, isDraft, onRemove,
+}: { body: string; isDraft?: boolean; onRemove?: () => void }) {
+  return (
+    <div style={{
+      margin: '4px 12px 6px 92px', padding: '8px 10px', borderRadius: 6,
+      background: isDraft ? 'rgba(139,143,240,0.08)' : 'rgba(28,28,32,0.98)',
+      border: `1px solid ${isDraft ? 'rgba(139,143,240,0.35)' : 'rgba(255,255,255,0.12)'}`,
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        marginBottom: 4,
+      }}>
+        <span style={{
+          fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+          color: isDraft ? '#8b8ff0' : 'rgba(255,255,255,0.45)',
+        }}>
+          {isDraft ? 'Draft comment' : 'Review comment'}
+        </span>
+        {!isDraft && onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            style={{
+              fontSize: 11, color: 'rgba(255,255,255,0.4)',
+              background: 'transparent', border: 'none', cursor: 'pointer',
+            }}
+          >
+            Remove
+          </button>
+        )}
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.45, color: 'rgba(255,255,255,0.9)', whiteSpace: 'pre-wrap' }}>
+        {body}
+      </div>
+    </div>
+  );
+}
+
+function DiffLine({
+  ln, review,
+}: {
+  ln: DiffLineData;
+  review?: FileDiffReviewProps;
+}) {
   const isAdd = ln.type === 'add';
   const isDel = ln.type === 'del';
   const bg = isAdd ? REV.addBg : isDel ? REV.delBg : 'transparent';
   const gutterBg = isAdd ? REV.addGutter : isDel ? REV.delGutter : 'transparent';
   const sign = isAdd ? '+' : isDel ? '-' : ' ';
   const codeFg = isAdd ? REV.addFg : isDel ? REV.delFg : 'rgba(255,255,255,0.7)';
-  const gut: React.CSSProperties = {
+  const interactive = review != null;
+
+  const gut = (side: 'additions' | 'deletions', lineNumber: number | null): React.CSSProperties => ({
     textAlign: 'right', padding: '0 8px', color: 'rgba(255,255,255,0.25)',
     fontSize: 11, userSelect: 'none', background: gutterBg,
     borderRight: '1px solid rgba(255,255,255,0.05)',
-  };
+    cursor: interactive && lineNumber != null ? 'pointer' : 'default',
+  });
+
+  const lineComments = review?.comments.filter((c) => {
+    if (c.side === 'deletions' && ln.old != null) return c.lineNumber === ln.old;
+    if (c.side === 'additions' && ln.nw != null) return c.lineNumber === ln.nw;
+    return false;
+  }) ?? [];
+
+  const isComposingHere = review?.composing && (
+    (review.composing.side === 'deletions' && review.composing.lineNumber === ln.old)
+    || (review.composing.side === 'additions' && review.composing.lineNumber === ln.nw)
+  );
+
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '46px 46px 1fr',
-      background: bg, lineHeight: '19px', minHeight: 19,
-    }}>
-      <span style={gut}>{ln.old ?? ''}</span>
-      <span style={gut}>{ln.nw ?? ''}</span>
-      <span style={{ display: 'flex', paddingLeft: 6, paddingRight: 12, whiteSpace: 'pre', color: codeFg, fontSize: 12 }}>
-        <span style={{
-          width: 12, flexShrink: 0,
-          color: isAdd ? REV.addFg : isDel ? REV.delFg : 'rgba(255,255,255,0.25)',
-          opacity: sign === ' ' ? 0 : 0.9,
-        }}>{sign}</span>
-        <span style={{ flex: 1 }}>{ln.text || ' '}</span>
-      </span>
-    </div>
+    <>
+      <div style={{
+        display: 'grid', gridTemplateColumns: '46px 46px 1fr',
+        background: bg, lineHeight: '19px', minHeight: 19,
+      }}>
+        <span
+          style={gut('deletions', ln.old)}
+          onClick={() => {
+            if (review && ln.old != null) review.onLineClick('deletions', ln.old);
+          }}
+        >
+          {ln.old ?? ''}
+        </span>
+        <span
+          style={gut('additions', ln.nw)}
+          onClick={() => {
+            if (review && ln.nw != null) review.onLineClick('additions', ln.nw);
+          }}
+        >
+          {ln.nw ?? ''}
+        </span>
+        <span style={{ display: 'flex', paddingLeft: 6, paddingRight: 12, whiteSpace: 'pre', color: codeFg, fontSize: 12 }}>
+          <span style={{
+            width: 12, flexShrink: 0,
+            color: isAdd ? REV.addFg : isDel ? REV.delFg : 'rgba(255,255,255,0.25)',
+            opacity: sign === ' ' ? 0 : 0.9,
+          }}>{sign}</span>
+          <span style={{ flex: 1 }}>{ln.text || ' '}</span>
+        </span>
+      </div>
+      {isComposingHere && (
+        <LineComment body="Add a review comment…" isDraft />
+      )}
+      {lineComments.map((c) => (
+        <LineComment
+          key={c.id}
+          body={c.body}
+          onRemove={() => review?.onRemoveComment(c.id)}
+        />
+      ))}
+    </>
   );
 }
 
-export function FileDiff({ file }: { file: DiffFile }) {
+export function FileDiff({
+  file,
+  review,
+}: {
+  file: DiffFile;
+  review?: FileDiffReviewProps;
+}) {
   const [open, setOpen] = useState(true);
   const g = STATUS_GLYPH[file.status] ?? STATUS_GLYPH.modified;
   return (
@@ -99,7 +199,7 @@ export function FileDiff({ file }: { file: DiffFile }) {
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                 whiteSpace: 'pre', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{h.header}</div>
-              {h.lines.map((ln, j) => <DiffLine key={j} ln={ln} />)}
+              {h.lines.map((ln, j) => <DiffLine key={j} ln={ln} review={review} />)}
             </div>
           ))}
         </div>

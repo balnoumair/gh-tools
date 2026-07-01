@@ -1,5 +1,6 @@
 import { BrowserWindow } from 'electron';
 import path from 'node:path';
+import { hideDock } from './dock-icon';
 import type { GitRepo } from '@shared/types';
 
 let popoverWindow: BrowserWindow | null = null;
@@ -118,6 +119,7 @@ export function createFullWindow(repo?: GitRepo): BrowserWindow {
 
   fullWindow.on('closed', () => {
     fullWindow = null;
+    hideDock();
   });
 
   return fullWindow;

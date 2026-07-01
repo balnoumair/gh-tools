@@ -1,5 +1,7 @@
 import { Notification, shell } from 'electron';
 import type { PullRequest } from '@shared/types';
+import { getSettings } from './settings-store';
+import { isNotifierRepoFlagged } from '@shared/settings';
 
 // Keep references to prevent GC (known Electron macOS issue)
 const notificationRefs = new Map<number, Notification>();
@@ -12,12 +14,33 @@ const TITLE_BY_MENTION: Record<PullRequest['mentionType'], string> = {
 };
 
 export function showPRNotification(pr: PullRequest): void {
+  const notifier = getSettings().notifier;
   const repoName = pr.repoFullName.split('/')[1] ?? pr.repoFullName;
+
+  if (
+    isNotifierRepoFlagged(notifier.hiddenRepos, pr.repoFullName)
+    || isNotifierRepoFlagged(notifier.mutedRepos, pr.repoFullName)
+  ) {
+    return;
+  }
+
+  const allowedByType: Record<PullRequest['mentionType'], boolean> = {
+    review_requested: notifier.notifyReview,
+    assigned: notifier.notifyAssigned,
+    mentioned: notifier.notifyMentions,
+    authored: false,
+  };
+
+  if (!allowedByType[pr.mentionType]) {
+    return;
+  }
+
+  const repoNameDisplay = repoName;
   const notification = new Notification({
     title: TITLE_BY_MENTION[pr.mentionType],
-    subtitle: `${repoName} · #${pr.number}`,
+    subtitle: `${repoNameDisplay} · #${pr.number}`,
     body: `${pr.author.login} · ${pr.title}`,
-    silent: false,
+    silent: !notifier.notifySound,
   });
 
   notificationRefs.set(pr.id, notification);

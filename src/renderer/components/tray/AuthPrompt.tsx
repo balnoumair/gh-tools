@@ -10,12 +10,13 @@ export default function AuthPrompt() {
         <div className="flex flex-col items-center gap-3">
           <span className="gh-mark text-mac-label-secondary w-7 h-7" aria-hidden />
           <div className="text-center space-y-1.5">
-            <div className="text-[15px] font-semibold text-mac-label leading-none tracking-tight">
+            <div className="text-[15px] font-semibold leading-none tracking-tight" style={{ color: 'var(--gh-fg-1)' }}>
               Connect GitHub
             </div>
-            <div className="text-[12px] text-mac-label-secondary leading-relaxed">
+            <div className="text-[12px] leading-relaxed" style={{ color: 'var(--gh-fg-2)' }}>
               Run{' '}
-              <span className="font-mono text-[11px] text-mac-label bg-mac-control-bg px-1.5 py-0.5 rounded border border-mac-separator-heavy">
+              <span className="font-mono text-[11px] px-1.5 py-0.5 rounded border"
+                style={{ color: 'var(--gh-fg-1)', background: 'rgba(255,255,255,0.04)', borderColor: 'var(--gh-line-2)' }}>
                 gh auth login
               </span>{' '}
               in your terminal, then retry.
@@ -25,15 +26,13 @@ export default function AuthPrompt() {
 
         <button
           onClick={() => checkAuth()}
-          className="w-full py-2 text-[13px] font-medium rounded-lg
-                     bg-mac-accent text-[#171717]
-                     hover:bg-mac-accent-hover active:bg-mac-accent-active
-                     transition-colors"
+          className="w-full py-2 text-[13px] font-medium rounded-lg transition-colors"
+          style={{ background: 'var(--cc-accent)', color: '#0e0f14' }}
         >
           Retry
         </button>
 
-        <div className="text-[10.5px] text-mac-label-tertiary text-center">
+        <div className="text-[10.5px] text-center" style={{ color: 'var(--gh-fg-3)' }}>
           Requires <span className="font-mono">repo</span> + <span className="font-mono">read:org</span> scopes
         </div>
       </div>

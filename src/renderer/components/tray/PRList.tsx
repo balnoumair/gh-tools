@@ -1,27 +1,28 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { usePRStore } from '../../stores/pr-store';
-import { filterPRs, getPRsByRepo, type TrayFilter } from './pr-visibility';
+import { filterNotifierPRs, filterPRs, getPRsByRepo, type TrayFilter } from './pr-visibility';
+import { useNotifierSettings } from '../../hooks/use-notifier-settings';
 import type { PullRequest } from '@shared/types';
 
 function ciDotColor(ciStatus: PullRequest['ciStatus']): string {
-  if (ciStatus === 'success') return 'var(--gh-success, #6fcf97)';
-  if (ciStatus === 'failure') return 'var(--gh-danger, #e98b8b)';
-  if (ciStatus === 'pending') return 'var(--gh-warn, #d9c98a)';
-  return 'rgba(255,255,255,0.25)';
+  if (ciStatus === 'success') return 'var(--gh-success)';
+  if (ciStatus === 'failure') return 'var(--gh-danger)';
+  if (ciStatus === 'pending') return 'var(--gh-warn)';
+  return 'var(--gh-fg-4)';
 }
 
 const STATE_LABEL: Record<PullRequest['mentionType'], string> = {
-  review_requested: 'Review',
+  review_requested: 'Review requested',
   authored: 'Yours',
   mentioned: 'Mentioned',
   assigned: 'Assigned',
 };
 
 const STATE_COLOR: Record<PullRequest['mentionType'], string> = {
-  review_requested: 'var(--gh-info, #8fa6e6)',
-  authored: 'rgba(255,255,255,0.55)',
-  mentioned: 'var(--gh-warn, #d9c98a)',
-  assigned: 'rgba(255,255,255,0.55)',
+  review_requested: 'var(--gh-info)',
+  authored: 'var(--gh-fg-2)',
+  mentioned: 'var(--gh-warn)',
+  assigned: 'var(--gh-fg-2)',
 };
 
 function formatAge(updatedAt: string): string {
@@ -60,19 +61,19 @@ function PRRow({ pr }: { pr: PullRequest }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
           <span style={{
-            fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 11,
-            color: 'rgba(255,255,255,0.3)', flexShrink: 0,
+            fontFamily: 'var(--font-mono)', fontSize: 11,
+            color: 'var(--gh-fg-4)', flexShrink: 0,
           }}>#{pr.number}</span>
           <span style={{
-            fontSize: 12.5, color: 'rgba(255,255,255,0.9)', fontWeight: 500,
+            fontSize: 12.5, color: 'var(--gh-fg-1)', fontWeight: 500,
             lineHeight: 1.32, overflow: 'hidden',
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
           }}>{pr.title}</span>
         </div>
         <div style={{
           marginTop: 3, display: 'flex', alignItems: 'center', gap: 7,
-          fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 10.5,
-          color: 'rgba(255,255,255,0.3)',
+          fontFamily: 'var(--font-mono)', fontSize: 10.5,
+          color: 'var(--gh-fg-4)',
         }}>
           <span style={{ color: STATE_COLOR[pr.mentionType] }}>
             {STATE_LABEL[pr.mentionType]}
@@ -96,18 +97,18 @@ function RepoGroup({ repo, prs }: { repo: string; prs: PullRequest[] }) {
       }}>
         <span style={{
           width: 17, height: 17, borderRadius: 5,
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+          background: 'var(--gh-bg-3)', border: '1px solid var(--gh-line-2)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 9,
-          fontWeight: 600, color: 'rgba(255,255,255,0.55)', flexShrink: 0,
+          fontFamily: 'var(--font-mono)', fontSize: 9,
+          fontWeight: 600, color: 'var(--gh-fg-2)', flexShrink: 0,
         }}>{repo[0]?.toUpperCase()}</span>
         <span style={{
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)',
+          fontFamily: 'inherit',
+          fontSize: 12, fontWeight: 600, color: 'var(--gh-fg-2)',
         }}>{repo}</span>
         <span style={{
-          fontFamily: 'var(--gh-font-mono, monospace)',
-          fontSize: 10.5, color: 'rgba(255,255,255,0.3)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10.5, color: 'var(--gh-fg-4)',
         }}>{prs.length}</span>
       </div>
       {prs.map((pr) => <PRRow key={pr.id} pr={pr} />)}
@@ -130,7 +131,7 @@ function FilterTabs({
   return (
     <div style={{
       display: 'inline-flex', background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: 2, gap: 2,
+      border: '1px solid var(--gh-line-2)', borderRadius: 8, padding: 2, gap: 2,
     }}>
       {tabs.map((t) => {
         const active = filter === t.v;
@@ -140,17 +141,18 @@ function FilterTabs({
             onClick={() => onChange(t.v)}
             style={{
               height: 22, padding: '0 9px', borderRadius: 6,
-              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontFamily: 'inherit',
               fontSize: 11, fontWeight: 500, cursor: 'pointer',
-              background: active ? 'rgba(139,143,240,0.15)' : 'transparent',
-              color: active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
-              border: active ? '1px solid rgba(139,143,240,0.40)' : '1px solid transparent',
+              background: active ? 'var(--cc-accent-soft)' : 'transparent',
+              color: active ? 'var(--gh-fg-1)' : 'var(--gh-fg-3)',
+              boxShadow: active ? 'inset 0 0 0 1px var(--cc-accent-line)' : 'none',
+              border: 'none',
             }}
           >
             {t.l}
             <span style={{
-              marginLeft: 5, color: active ? '#8b8ff0' : 'rgba(255,255,255,0.25)',
-              fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 10,
+              marginLeft: 5, color: active ? 'var(--cc-accent)' : 'var(--gh-fg-4)',
+              fontFamily: 'var(--font-mono)', fontSize: 10,
             }}>{t.c}</span>
           </button>
         );
@@ -161,16 +163,24 @@ function FilterTabs({
 
 export default function PRList() {
   const { prs, isRefreshing, error } = usePRStore();
+  const notifier = useNotifierSettings();
   const [filter, setFilter] = useState<TrayFilter>('all');
+
+  const listedPRs = useMemo(
+    () => filterNotifierPRs(prs, notifier),
+    [prs, notifier],
+  );
+  const visible = filterPRs(listedPRs, filter);
+  const groups = getPRsByRepo(visible);
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 px-4">
-        <div className="text-[13px]" style={{ color: '#e98b8b' }}>{error}</div>
+        <div className="text-[13px]" style={{ color: 'var(--gh-danger)' }}>{error}</div>
         <button
           onClick={() => usePRStore.getState().forceRefresh()}
           className="text-[11px] transition-colors"
-          style={{ color: '#8b8ff0' }}
+          style={{ color: 'var(--cc-accent)' }}
         >
           Try again
         </button>
@@ -181,57 +191,39 @@ export default function PRList() {
   if (isRefreshing && prs.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="flex items-center gap-2 text-[12px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+        <div className="flex items-center gap-2 text-[12px]" style={{ color: 'var(--gh-fg-3)' }}>
           <span>Loading…</span>
         </div>
       </div>
     );
   }
 
-  const visible = filterPRs(prs, filter);
-  const groups = getPRsByRepo(visible);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Filter tabs */}
-      <div style={{ padding: '0 13px 10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ padding: '0 13px 10px' }}>
         <FilterTabs
           filter={filter}
           onChange={setFilter}
-          all={prs.length}
-          review={prs.filter((p) => p.mentionType === 'review_requested').length}
-          yours={prs.filter((p) => p.mentionType === 'authored').length}
+          all={listedPRs.length}
+          review={listedPRs.filter((p) => p.mentionType === 'review_requested').length}
+          yours={listedPRs.filter((p) => p.mentionType === 'authored').length}
         />
       </div>
 
       {/* List */}
-      <div style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', paddingBottom: 6 }}>
+      <div className="gh-scroll" style={{ flex: 1, overflowY: 'auto', borderTop: '1px solid var(--gh-line-1)', paddingBottom: 6 }}>
         {groups.length === 0 ? (
           <div style={{
             padding: '28px 14px', textAlign: 'center',
-            fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 12,
-            color: 'rgba(255,255,255,0.25)',
+            fontFamily: 'var(--font-mono)', fontSize: 12,
+            color: 'var(--gh-fg-4)',
           }}>
             Nothing here — you&apos;re all caught up.
           </div>
         ) : (
           groups.map((g) => <RepoGroup key={g.repo} repo={g.repo} prs={g.prs} />)
         )}
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        padding: '8px 13px',
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        background: 'rgba(0,0,0,0.18)',
-        fontFamily: 'var(--gh-font-mono, monospace)', fontSize: 11,
-        color: 'rgba(255,255,255,0.25)',
-      }}>
-        <span style={{ color: 'rgba(255,255,255,0.4)' }}>{visible.length} shown</span>
-        <span style={{ marginLeft: 'auto' }}>
-          Open Review
-        </span>
       </div>
     </div>
   );
